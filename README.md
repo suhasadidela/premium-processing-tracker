@@ -1,0 +1,172 @@
+# OPT Premium Processing Tracker
+
+A countdown to the 30-business-day USCIS premium processing deadline.
+
+**Live:** https://suhasadidela.github.io/premium-processing-tracker/
+
+## The problem
+
+Premium processing for an I-765 carries a 30 **business day** guarantee. That
+sounds like a countdown, but you cannot build one with a subtraction: business
+days are not calendar days, and the conversion is not a fixed ratio. Thirty
+business days from a July filing and thirty from a November filing land
+different distances out, because Thanksgiving and Christmas sit in the second
+window and nothing sits in the first.
+
+So the deadline is not something you can eyeball off a calendar. It has to be
+counted, and the counting has three rules that are each easy to get wrong.
+
+## Counting the days
+
+### 1. The filing date is day 1, not day 0
+
+The window is inclusive of the day you filed. This is the single most
+consequential line in the project — treating the filing date as day 0 shifts
+every subsequent date by one and puts the deadline on the wrong day.
+
+For this filing it is what makes the arithmetic land exactly:
+
+```
+filed Tue Jul 21, 2026  →  business day 1
+      Mon Aug 31, 2026  →  business day 30
+```
+
+Off by one, and Aug 31 becomes day 29 and the real deadline silently moves to
+Sep 1.
+
+### 2. Weekends don't count
+
+Straightforward, and the only one of the three that most people remember.
+
+### 3. Federal holidays don't count — on the day they're *observed*
+
+There are eleven US federal holidays, and they are not all fixed dates. They
+come in three shapes, so the code computes rather than hardcodes them:
+
+| Shape | Examples | How it's found |
+|---|---|---|
+| Nth weekday of a month | MLK Day (3rd Mon of Jan), Thanksgiving (4th Thu of Nov) | `nthWeekday()` |
+| Last weekday of a month | Memorial Day (last Mon of May) | `lastWeekday()` |
+| Fixed date, shifted if it lands on a weekend | New Year's, Juneteenth, July 4, Veterans Day, Christmas | `observed()` |
+
+That last shape is the subtle one. A fixed-date holiday falling on a weekend is
+observed on the nearest weekday — **Saturday shifts back to Friday, Sunday
+shifts forward to Monday** — and the *observed* day is the federal holiday, so
+that is the day the count skips.
+
+```js
+function observed(date) {
+  const day = date.getDay();
+  const d = new Date(date);
+  if (day === 6) d.setDate(d.getDate() - 1); // Sat → observed Friday
+  if (day === 0) d.setDate(d.getDate() + 1); // Sun → observed Monday
+  return d;
+}
+```
+
+This is not hypothetical for 2026: **July 4 falls on a Saturday, so the holiday
+is observed Friday July 3.** A tracker that skipped Jul 4 itself would skip a
+day that was never a business day to begin with, and count Jul 3 — an actual
+federal holiday — as a working day. It would be wrong twice in one weekend.
+
+As it happens, **no federal holiday falls inside this particular filing
+window**, so the holiday logic changes nothing for these dates. It is there
+because the window is a config value: change `filedDate` to a November filing
+and the holiday handling starts doing real work immediately.
+
+## Design decisions
+
+### The segments are discrete on purpose
+
+The progress bar is thirty separate blocks, not a continuous fill.
+
+A smooth bar would imply the quantity is continuous — that at noon on a
+Wednesday you are "half a day" further along. You are not. Business days are
+discrete units that tick over at a boundary and sit still in between, and they
+sit *completely* still across a weekend. One block per day says that; a smooth
+bar misrepresents it.
+
+The same reasoning drives the weekday in the header. On a Saturday the counter
+reads identically to Friday and does not move for two days. Without the day
+name on screen, a correct tracker looks like a frozen one, so non-business days
+label themselves as such.
+
+### Zero build
+
+One `index.html` — inline `<style>`, vanilla JS, no dependencies, no build
+step. GitHub Pages serves the file as-is, so `git push` is the deploy.
+
+The whole thing is a countdown and some date math. A toolchain would add more
+moving parts than the problem has, and would need to still work in a year when
+the only thing that should have changed is a date in a config object.
+
+## Layout invariants
+
+These are load-bearing and each has broken at least once. If you edit the CSS,
+re-check all three at a wide desktop window *and* a phone width:
+
+1. **The clock stays on one line.** Digit size is keyed to the *card* via
+   container query units (`cqw`), not the viewport. Sizing it in `vw` breaks it:
+   the card stops growing at `max-width: 900px` while `vw` keeps going, so past
+   ~1100px the four groups outgrow the card and the seconds wrap.
+2. **The segment bar is one row of 30.** It's a
+   `grid-template-columns: repeat(30, 1fr)`, so the count holds structurally
+   rather than relying on fixed widths that happen to fit. If
+   `totalBusinessDays` changes, update the `30` to match.
+3. **The card fits the viewport.** Vertical dimensions are capped with
+   `min(…vw, …vh)`. Keying a vertical size to viewport *width* alone makes the
+   card outgrow a wide-but-short window and pushes the footer below the fold.
+
+## Configuration
+
+Everything configurable is in the `CONFIG` object at the top of the `<script>`
+block:
+
+```js
+const CONFIG = {
+  filedDate:   new Date(2026, 6, 21),   // months are 0-indexed: 6 = July
+  estimated:   new Date(2026, 7, 20),
+  lastDay:     new Date(2026, 7, 31),
+  deadline:    new Date(2026, 7, 31, 23, 59, 59),
+  totalBusinessDays: 30,
+  receiptNumber: "",     // keep empty — see note below
+  showReceipt: false,
+  uscisUrl: "https://egov.uscis.gov/"
+};
+```
+
+Months are zero-indexed — January is `0`, July is `6`.
+
+`lastDay` and `deadline` are the counted deadline. `estimated` is displayed for
+reference and is not derived from the business-day math.
+
+## Interaction
+
+- Clicking the clock (or Enter/Space when focused) toggles between time
+  remaining and time since filing. The hint fades permanently after first use.
+- Status: **ON TRACK** (cyan) → **DUE SOON** (amber, last 3 business days) →
+  **OVERDUE** (red). The clock digits and segment bar take the status color.
+
+## Deploying
+
+Pages serves `index.html` from `main`, `/ (root)`. There's no build step, so
+pushing is the deploy:
+
+```bash
+git add index.html && git commit -m "..." && git push
+```
+
+Give it 30–60 seconds, then hard-refresh (Cmd+Shift+R) past the browser cache.
+
+## A note on the receipt number
+
+`receiptNumber` is empty and `showReceipt` is `false`. Leave them that way.
+
+The flag alone is not enough to keep the number private. `index.html` is served
+verbatim to every visitor, so a value in `CONFIG` is readable from View Source
+whether or not it is ever rendered — turning `showReceipt` off hides the line,
+not the data. The only way the number stays off the site is to keep it out of
+the file.
+
+The page also carries a `noindex` meta tag, which keeps it out of search
+results but is not privacy either: anyone with the URL can open it.

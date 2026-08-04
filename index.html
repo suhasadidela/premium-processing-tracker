@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>OPT Premium Processing Tracker</title>
+<meta name="description" content="Countdown to the 30-business-day premium processing deadline." />
+<meta name="theme-color" content="#0A0E14" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0A0E14;
+    --surface: #10151D;
+    --surface-hi: #161C26;
+    --border: #232B38;
+    --text: #E7ECF3;
+    --dim: #6E7A8A;
+    --cyan: #4CC9F0;
+    --amber: #F5A623;
+    --red: #FF5C5C;
+    --seg-off: #1B222D;
+    --status: var(--cyan);
+  }
+  * { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+  .frame {
+    padding: clamp(12px, min(3vw, 2.2vh), 36px);
+    position: relative;
+    z-index: 2;
+    width: 100%;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: clamp(16px, min(3vw, 2.6vh), 38px) clamp(18px, 3.5vw, 48px) clamp(18px, min(3.5vw, 2.8vh), 42px);
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    /* Clock sizes off the card, not the viewport — the card stops growing at 900px */
+    container-type: inline-size;
+  }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    color: var(--dim);
+    font-size: clamp(11px, 1.1vw, 15px);
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .cursor { color: var(--cyan); animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  .header-right { text-align: right; }
+  /* Weekday is load-bearing: it explains why the counter sits still on a
+     weekend or holiday, which otherwise reads as a stuck page. */
+  .today-line {
+    color: var(--text);
+    font-size: clamp(12px, 1.2vw, 17px);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: 15px;
+  }
+  /* Qualifier steps back so the date itself stays the bright thing */
+  .today-off { color: var(--dim); font-weight: 600; }
+  .uscis-link {
+    display: inline-block;
+    color: var(--cyan);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: clamp(10px, 0.95vw, 13px);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    transition: border-color 160ms ease, background 160ms ease;
+  }
+  .uscis-link:hover, .uscis-link:focus-visible {
+    border-color: var(--cyan);
+    background: rgba(76,201,240,0.08);
+  }
+  .receipt-line {
+    color: var(--border);
+    font-size: clamp(10px, 0.9vw, 12px);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    margin-top: 4px;
+    text-align: right;
+  }
+  .receipt-num { color: var(--dim); font-weight: 600; letter-spacing: 0.06em; }
+  .hero {
+    text-align: center;
+    margin-top: clamp(28px, 4vh, 56px);
+    cursor: pointer;
+    user-select: none;
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .hero:focus-visible { outline: 2px solid var(--cyan); }
+  .hero-row {
+    display: flex;
+    justify-content: center;
+    gap: clamp(8px, 2.6cqw, 26px);
+    flex-wrap: nowrap;
+  }
+  .hero-num {
+    color: var(--text);
+    font-size: clamp(34px, 11vw, 132px);
+    font-size: clamp(34px, min(14cqw, 15vh), 116px);
+    white-space: nowrap;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    transition: color 300ms ease;
+  }
+  body.mode-remaining .hero-num { color: var(--status); }
+  .hero-unit {
+    font-size: 0.35em;
+    color: var(--cyan);
+    margin-left: 3px;
+    font-weight: 600;
+  }
+  body.mode-remaining .hero-unit { color: var(--dim); }
+  .hero-label {
+    color: var(--dim);
+    font-size: clamp(11px, 1.15vw, 16px);
+    letter-spacing: 0.15em;
+    margin-top: clamp(10px, 1.6vh, 20px);
+  }
+  .hero-hint {
+    color: var(--border);
+    font-size: clamp(9px, 0.85vw, 12px);
+    letter-spacing: 0.12em;
+    margin-top: 6px;
+    transition: opacity 600ms ease;
+    pointer-events: none;
+  }
+  body.tapped .hero-hint { opacity: 0; }
+  .status-wrap { text-align: center; margin: clamp(18px, 3vh, 34px) 0 clamp(22px, 3vh, 36px); }
+  .status-pill {
+    display: inline-block;
+    border: 1px solid var(--status);
+    color: var(--status);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--status) 33%, transparent);
+    border-radius: 999px;
+    padding: clamp(5px, 0.7vw, 9px) clamp(14px, 1.6vw, 24px);
+    font-size: clamp(11px, 1.15vw, 16px);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+  /* 30 equal columns: one row of 30 by construction, never wraps */
+  .seg-bar {
+    display: grid;
+    grid-template-columns: repeat(30, 1fr);
+    gap: clamp(2px, 0.3vw, 5px);
+    width: 100%;
+  }
+  .seg {
+    width: 100%;
+    /* height capped by vh too, so a short desktop window still fits */
+    height: clamp(20px, min(4.2vw, 6.2vh), 56px);
+    border-radius: 4px;
+    background: var(--seg-off);
+  }
+  .seg.filled {
+    background: var(--status);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--status) 53%, transparent);
+  }
+  .seg.current { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .seg-caption {
+    text-align: center;
+    color: var(--dim);
+    font-size: clamp(11px, 1.15vw, 16px);
+    letter-spacing: 0.08em;
+    margin-top: clamp(8px, 1.4vh, 16px);
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(10px, 1.4vw, 20px);
+    margin: clamp(20px, 3.2vh, 38px) 0;
+  }
+  .stat-box {
+    background: var(--surface-hi);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: clamp(10px, min(1.8vw, 1.8vh), 22px) clamp(10px, 1.4vw, 18px);
+    text-align: center;
+  }
+  .stat-val {
+    color: var(--text);
+    font-size: clamp(24px, min(3.4vw, 4.6vh), 48px);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-label {
+    color: var(--dim);
+    font-size: clamp(9.5px, 1vw, 13px);
+    letter-spacing: 0.08em;
+    margin-top: clamp(4px, 0.8vh, 9px);
+  }
+  .footer-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-top: 1px solid var(--border);
+    padding-top: clamp(14px, 2.4vh, 26px);
+    gap: 8px;
+  }
+  .footer-label { color: var(--dim); font-size: clamp(10px, 1vw, 14px); letter-spacing: 0.08em; }
+  .footer-val {
+    color: var(--text);
+    font-size: clamp(13px, 1.5vw, 21px);
+    font-weight: 600;
+    margin-top: clamp(3px, 0.7vh, 8px);
+  }
+  @media (max-width: 420px) {
+    .footer-val { font-size: 11px; }
+    .footer-label { font-size: 9px; }
+  }
+  /* Short landscape screens: don't let the clock push content off-screen */
+  @media (max-height: 700px) and (min-width: 900px) {
+    .hero-num { font-size: clamp(34px, min(10cqw, 13vh), 84px); }
+    .seg { height: clamp(16px, min(2.4vw, 4.4vh), 34px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body class="mode-remaining">
+<div class="frame">
+  <div class="card">
+
+    <div class="header-row">
+      <div>
+        <div class="eyebrow">F1_OPT // PREMIUM_PROCESSING <span class="cursor">█</span></div>
+        <div class="today-line" id="todayLine"></div>
+      </div>
+      <div class="header-right">
+        <a class="uscis-link" id="uscis" href="https://egov.uscis.gov/" target="_blank" rel="noopener noreferrer">CHECK STATUS ↗</a>
+        <div class="receipt-line" id="receiptLine">RECEIPT <span class="receipt-num" id="receiptNum"></span></div>
+      </div>
+    </div>
+
+    <div class="hero" id="hero" role="button" tabindex="0" aria-label="Toggle between time remaining and time since filing">
+      <div class="hero-row" id="heroRow"></div>
+      <div class="hero-label" id="heroLabel"></div>
+      <div class="hero-hint" id="heroHint"></div>
+    </div>
+
+    <div class="status-wrap">
+      <span class="status-pill" id="statusPill"></span>
+    </div>
+
+    <div>
+      <div class="seg-bar" id="segBar"></div>
+      <div class="seg-caption" id="segCaption"></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-val" id="bdPassed"></div>
+        <div class="stat-label">BUSINESS DAYS PASSED</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="bdLeft"></div>
+        <div class="stat-label">BUSINESS DAYS LEFT</div>
+      </div>
+    </div>
+
+    <div class="footer-row">
+      <div style="text-align:left">
+        <div class="footer-label">FILED</div>
+        <div class="footer-val" id="filedVal"></div>
+      </div>
+      <div style="text-align:center">
+        <div class="footer-label">ESTIMATED</div>
+        <div class="footer-val" id="estVal" style="color:var(--cyan)"></div>
+      </div>
+      <div style="text-align:right">
+        <div class="footer-label">LAST DAY</div>
+        <div class="footer-val" id="lastVal"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — edit these three things and nothing else
+   ============================================================ */
+const CONFIG = {
+  filedDate:   new Date(2026, 6, 21),               // Jul 21, 2026
+  estimated:   new Date(2026, 7, 20),               // Aug 20, 2026
+  lastDay:     new Date(2026, 7, 31),               // Aug 31, 2026
+  deadline:    new Date(2026, 7, 31, 23, 59, 59),   // Aug 31, 11:59:59 PM
+  totalBusinessDays: 30,
+  // Left empty on purpose. This file is served verbatim to every visitor, so a
+  // value here is public even with showReceipt off — hiding the line only stops
+  // it rendering, it does not stop View Source. Keep it out of the deployed file.
+  receiptNumber: "",
+  showReceipt: false,
+  uscisUrl: "https://egov.uscis.gov/"
+};
+
+/* ---------- US federal holiday math ---------- */
+function nthWeekday(year, month, weekday, n) {
+  const d = new Date(year, month, 1);
+  let count = 0;
+  while (true) {
+    if (d.getDay() === weekday) { count++; if (count === n) return new Date(d); }
+    d.setDate(d.getDate() + 1);
+  }
+}
+function lastWeekday(year, month, weekday) {
+  const d = new Date(year, month + 1, 0);
+  while (d.getDay() !== weekday) d.setDate(d.getDate() - 1);
+  return new Date(d);
+}
+function observed(date) {
+  const day = date.getDay();
+  const d = new Date(date);
+  if (day === 6) d.setDate(d.getDate() - 1);
+  if (day === 0) d.setDate(d.getDate() + 1);
+  return d;
+}
+function federalHolidays(year) {
+  return [
+    observed(new Date(year, 0, 1)),    // New Year's Day
+    nthWeekday(year, 0, 1, 3),         // MLK Day
+    nthWeekday(year, 1, 1, 3),         // Washington's Birthday
+    lastWeekday(year, 4, 1),           // Memorial Day
+    observed(new Date(year, 5, 19)),   // Juneteenth
+    observed(new Date(year, 6, 4)),    // Independence Day
+    nthWeekday(year, 8, 1, 1),         // Labor Day
+    nthWeekday(year, 9, 1, 2),         // Columbus Day
+    observed(new Date(year, 10, 11)),  // Veterans Day
+    nthWeekday(year, 10, 4, 4),        // Thanksgiving
+    observed(new Date(year, 11, 25))   // Christmas
+  ].map(d => d.toDateString());
+}
+const holidayCache = {};
+function isHoliday(date) {
+  const y = date.getFullYear();
+  if (!holidayCache[y]) holidayCache[y] = new Set(federalHolidays(y));
+  return holidayCache[y].has(date.toDateString());
+}
+function isBusinessDay(date) {
+  const day = date.getDay();
+  return day !== 0 && day !== 6 && !isHoliday(date);
+}
+// Counts the filing day itself as business day 1
+function businessDaysThrough(start, end) {
+  const d = new Date(start); d.setHours(0,0,0,0);
+  const endDay = new Date(end); endDay.setHours(0,0,0,0);
+  let count = 0;
+  while (d <= endDay) {
+    if (isBusinessDay(d)) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+}
+const pad = n => String(n).padStart(2, "0");
+
+/* ---------- state ---------- */
+let mode = "remaining"; // "remaining" | "passed"
+
+/* ---------- static bits ---------- */
+document.getElementById("uscis").href = CONFIG.uscisUrl;
+if (CONFIG.showReceipt) {
+  document.getElementById("receiptNum").textContent = CONFIG.receiptNumber;
+} else {
+  document.getElementById("receiptLine").style.display = "none";
+}
+document.getElementById("filedVal").textContent = fmtDate(CONFIG.filedDate);
+document.getElementById("estVal").textContent = fmtDate(CONFIG.estimated);
+document.getElementById("lastVal").textContent = fmtDate(CONFIG.lastDay);
+
+const segBar = document.getElementById("segBar");
+for (let i = 1; i <= CONFIG.totalBusinessDays; i++) {
+  const el = document.createElement("div");
+  el.className = "seg";
+  el.title = "Business day " + i;
+  segBar.appendChild(el);
+}
+const segs = Array.from(segBar.children);
+
+const heroRow = document.getElementById("heroRow");
+const unitEls = ["D","H","M","S"].map(unit => {
+  const span = document.createElement("span");
+  span.className = "hero-num";
+  const val = document.createElement("span");
+  const u = document.createElement("span");
+  u.className = "hero-unit";
+  u.textContent = unit;
+  span.appendChild(val);
+  span.appendChild(u);
+  heroRow.appendChild(span);
+  return val;
+});
+
+/* ---------- toggle ---------- */
+const hero = document.getElementById("hero");
+function toggleMode() {
+  mode = mode === "remaining" ? "passed" : "remaining";
+  document.body.classList.toggle("mode-remaining", mode === "remaining");
+  document.body.classList.add("tapped");
+  render();
+}
+hero.addEventListener("click", toggleMode);
+hero.addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMode(); }
+});
+
+/* ---------- render ---------- */
+function render() {
+  const now = new Date();
+
+  const remainingMs = Math.max(0, CONFIG.deadline - now);
+  const passedMs = Math.max(0, now - CONFIG.filedDate);
+  const diffMs = mode === "remaining" ? remainingMs : passedMs;
+  const expired = remainingMs === 0;
+
+  unitEls[0].textContent = pad(Math.floor(diffMs / 86400000));
+  unitEls[1].textContent = pad(Math.floor((diffMs % 86400000) / 3600000));
+  unitEls[2].textContent = pad(Math.floor((diffMs % 3600000) / 60000));
+  unitEls[3].textContent = pad(Math.floor((diffMs % 60000) / 1000));
+
+  document.getElementById("heroLabel").textContent =
+    mode === "remaining"
+      ? (expired ? "WINDOW CLOSED" : "TIME LEFT UNTIL AUG 31, 11:59 PM")
+      : "TIME SINCE FILING";
+  document.getElementById("heroHint").textContent =
+    "TAP TO SHOW " + (mode === "remaining" ? "TIME PASSED" : "TIME LEFT");
+
+  const weekday = now.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+  const isoToday = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+  const todayEl = document.getElementById("todayLine");
+  todayEl.textContent = weekday + " · " + isoToday;
+  if (!isBusinessDay(now)) {
+    const off = document.createElement("span");
+    off.className = "today-off";
+    off.textContent = " · NON-BUSINESS DAY";
+    todayEl.appendChild(off);
+  }
+
+  const rawPassed = businessDaysThrough(CONFIG.filedDate, now);
+  const filled = Math.min(CONFIG.totalBusinessDays, rawPassed);
+  const left = Math.max(0, CONFIG.totalBusinessDays - rawPassed);
+  const overdue = rawPassed > CONFIG.totalBusinessDays;
+
+  let statusLabel = "ON TRACK", statusColor = "var(--cyan)";
+  if (overdue) { statusLabel = "OVERDUE"; statusColor = "var(--red)"; }
+  else if (left <= 3) { statusLabel = "DUE SOON"; statusColor = "var(--amber)"; }
+  document.documentElement.style.setProperty("--status", statusColor);
+  document.getElementById("statusPill").textContent = "● " + statusLabel;
+
+  segs.forEach((el, i) => {
+    const n = i + 1;
+    el.classList.toggle("filled", n <= filled);
+    el.classList.toggle("current", n === filled && !overdue);
+  });
+  document.getElementById("segCaption").textContent =
+    filled + " / " + CONFIG.totalBusinessDays + " BUSINESS DAYS" +
+    (overdue ? " (+" + (rawPassed - CONFIG.totalBusinessDays) + " OVER)" : "");
+
+  document.getElementById("bdPassed").textContent = rawPassed;
+  const leftEl = document.getElementById("bdLeft");
+  leftEl.textContent = left;
+  leftEl.style.color = (left <= 3 && !overdue) ? "var(--amber)" : "var(--text)";
+}
+
+render();
+setInterval(render, 1000);
+</script>
+</body>
+</html>
