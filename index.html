@@ -244,6 +244,37 @@
     padding-top: clamp(14px, 2.4vh, 26px);
     gap: 8px;
   }
+  /* Secondary resources: dim by default so they sit below the card in the
+     hierarchy, and brighten to cyan on hover like the status link does. */
+  .links-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(8px, 1vw, 14px);
+    max-width: 900px;
+    margin: clamp(8px, 1.4vh, 18px) auto 0;
+  }
+  .ext-link {
+    color: var(--dim);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    /* vertical padding capped by vh so this row can't push the card off a
+       short screen — see invariant 3 in the README */
+    padding: clamp(5px, min(0.8vw, 1.1vh), 10px) clamp(10px, 1.3vw, 18px);
+    font-size: clamp(9px, 0.9vw, 12px);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+  .ext-link:hover, .ext-link:focus-visible {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: rgba(76,201,240,0.08);
+  }
+  .ext-arrow { opacity: 0.7; }
   .footer-label { color: var(--dim); font-size: clamp(10px, 1vw, 14px); letter-spacing: 0.08em; }
   .footer-val {
     color: var(--text);
@@ -321,6 +352,11 @@
       </div>
     </div>
 
+  </div>
+
+  <div class="links-row">
+    <a class="ext-link" href="https://www.reddit.com/r/f1visa/comments/1r6p9k0/optstem_opt_processing_timelines_megathread/" target="_blank" rel="noopener noreferrer">REDDIT // OPT TIMELINES <span class="ext-arrow">↗</span></a>
+    <a class="ext-link" href="https://opt-pulse.vercel.app/" target="_blank" rel="noopener noreferrer">OPT PULSE <span class="ext-arrow">↗</span></a>
   </div>
 </div>
 

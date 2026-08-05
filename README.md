@@ -113,9 +113,12 @@ re-check all three at a wide desktop window *and* a phone width:
    `grid-template-columns: repeat(30, 1fr)`, so the count holds structurally
    rather than relying on fixed widths that happen to fit. If
    `totalBusinessDays` changes, update the `30` to match.
-3. **The card fits the viewport.** Vertical dimensions are capped with
-   `min(…vw, …vh)`. Keying a vertical size to viewport *width* alone makes the
-   card outgrow a wide-but-short window and pushes the footer below the fold.
+3. **Everything fits the viewport** — the card *and* the links row beneath it.
+   Vertical dimensions are capped with `min(…vw, …vh)`. Keying a vertical size
+   to viewport *width* alone makes the layout outgrow a wide-but-short window
+   and pushes content below the fold. Anything added outside the card counts
+   against this budget: the links row overflowed a 1280×640 window by 3px until
+   its padding was capped by `vh` too.
 
 ## Configuration
 
