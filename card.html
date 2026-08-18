@@ -137,7 +137,9 @@
     color: var(--dim);
     font-size: clamp(11px, 1.15vw, 16px);
     letter-spacing: 0.15em;
-    margin-top: clamp(7px, 1.2vh, 15px);
+    /* Clear air under the clock — it was reading as one crowded block with
+       its label, caption and the pill. */
+    margin-top: clamp(12px, 2.4vh, 30px);
   }
   /* The tilde is load-bearing: ~12 is a typical range, never a deadline. */
   .hero-caption {
@@ -145,9 +147,10 @@
     font-size: clamp(10px, 1vw, 14px);
     letter-spacing: 0.12em;
     font-weight: 700;
-    margin-top: clamp(4px, 0.7vh, 9px);
+    margin-top: clamp(7px, 1.3vh, 16px);
   }
-  .status-wrap { text-align: center; margin: clamp(8px, 1.35vh, 18px) 0 clamp(9px, 1.35vh, 20px); }
+  /* The pill is its own element, not a tail on the caption */
+  .status-wrap { text-align: center; margin: clamp(16px, 3vh, 38px) 0 clamp(14px, 2.6vh, 32px); }
   .status-pill {
     display: inline-block;
     border: 1px solid var(--status);
@@ -167,30 +170,35 @@
     width: 100%;
   }
   .day {
+    position: relative;
     width: 100%;
     height: clamp(14px, min(3.1vw, 3.9vh), 40px);
     border-radius: 4px;
     background: var(--seg-off);
   }
-  /* A day that passed with no USCIS movement still counts — dim fill, not empty */
-  .day.past { background: #2A3442; }
-  .day.milestone {
+  /* Every elapsed day lights, like index.html's segment bar */
+  .day.lit {
     background: var(--cyan);
     box-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 53%, transparent);
   }
   /* Past the typical range is longer-than-usual, not late. Amber, never red. */
-  .day.over { background: var(--amber); opacity: 0.55; }
-  .day.over.milestone { background: var(--amber); opacity: 1; }
+  .day.over { background: var(--amber); box-shadow: 0 0 6px color-mix(in srgb, var(--amber) 53%, transparent); }
+  .day.over-future { background: var(--seg-off); opacity: 0.8; }
+  /* Marker sits on top of the lit state rather than replacing it */
+  .day.milestone::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: clamp(4px, 0.55vw, 7px);
+    height: clamp(4px, 0.55vw, 7px);
+    border-radius: 50%;
+    background: var(--bg);
+    opacity: 0.9;
+  }
   .day.today { animation: pulse 1.4s ease-in-out infinite; }
   .day.delivered { background: var(--green); box-shadow: 0 0 6px color-mix(in srgb, var(--green) 53%, transparent); }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-  .grid-caption {
-    text-align: center;
-    color: var(--dim);
-    font-size: clamp(9.5px, 1vw, 14px);
-    letter-spacing: 0.08em;
-    margin-top: clamp(5px, 0.9vh, 11px);
-  }
 
   /* ---- stage pipeline ---- */
   .pipeline { margin: clamp(9px, 1.35vh, 18px) 0 0; }
@@ -338,7 +346,6 @@
     .hero-label { margin-top: 5px; }
     .status-wrap { margin: 6px 0 7px; }
     .day { height: clamp(12px, min(3.1vw, 3.9vh), 40px); }
-    .grid-caption { margin-top: 3px; }
     .stage { padding: 1px 0; }
     .stat-grid { margin-top: 7px; }
     .stat-box { padding: 5px 8px; }
@@ -362,7 +369,6 @@
     .stat-grid { margin-top: clamp(7px, 1.1vh, 14px); }
     .stat-box { padding: clamp(5px, 0.9vh, 12px) clamp(10px, 1.4vw, 18px); }
     .stat-val { font-size: clamp(18px, min(2.6vw, 3vh), 32px); }
-    .grid-caption { margin-top: clamp(4px, 0.7vh, 9px); }
     .notes { margin-top: clamp(5px, 0.8vh, 11px); }
     .notes-head { margin-bottom: 3px; }
     #notesList { max-height: clamp(17px, 3vh, 26px); }
@@ -397,17 +403,14 @@
       <span class="status-pill" id="statusPill"></span>
     </div>
 
-    <div>
-      <div class="day-grid" id="dayGrid"></div>
-      <div class="grid-caption" id="gridCaption"></div>
-    </div>
+    <div class="day-grid" id="dayGrid"></div>
 
     <div class="pipeline" id="pipeline"></div>
 
     <div class="stat-grid">
       <div class="stat-box">
-        <div class="stat-val" id="sinceMove"></div>
-        <div class="stat-label">DAYS SINCE LAST MOVEMENT</div>
+        <div class="stat-val" id="expectedVal"></div>
+        <div class="stat-label" id="expectedLabel">EXPECTED AROUND</div>
       </div>
       <div class="stat-box">
         <div class="stat-val" id="stageCount"></div>
@@ -434,21 +437,25 @@
    CONFIG — the only thing to edit
    ============================================================ */
 const CONFIG = {
-  // The time matters: the hero shows elapsed hours, so midnight would overstate
-  // it by most of a day. This is the actual approval moment.
-  approvalDate: new Date(2026, 7, 14, 14, 0, 0),   // Fri Aug 14, 2026, 2:00 PM
-  typicalDays: 12,                                 // TYPICAL, not promised.
+  // Date only, no time. USCIS writes case status in a nightly batch, so the
+  // portal timestamp records when the row was written, not when the decision
+  // happened. Days are the finest unit the source data actually supports.
+  approvalDate: new Date(2026, 7, 14),   // Fri Aug 14, 2026
+  typicalDays: 12,                       // TYPICAL, not promised.
 
   // Stage names marked `own: true` are personal milestones, not USCIS statuses.
   // Every other name here is USCIS's verbatim portal wording — do not reword
   // them, or the page stops matching what the portal actually says. Personal
   // milestones render with a hollow dot so the two never blur together.
+  //
+  // Note: "Tracking Number Received" is a personal milestone. USCIS's own
+  // wording for that event is "Card Was Mailed To Me" — that is what the portal
+  // will display when it happens.
   stages: [
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
     { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "New Card Is Being Produced", date: null },
-    { name: "Card Was Mailed To Me",      date: null },
-    { name: "Card Was Picked Up By USPS", date: null },
+    { name: "Tracking Number Received",   date: null, own: true },
     { name: "Card Was Delivered To Me",   date: null }
   ],
 
@@ -496,19 +503,21 @@ if (CONFIG.trackingNumber) {
   trackEl.href = "https://tools.usps.com/tracking/?locale=en";
 }
 
-/* ---------- hero: two groups, days and hours, like index.html's clock ---------- */
+/* ---------- hero: whole days only ----------
+   No hours. USCIS updates case status in an overnight batch, and the portal
+   timestamp reflects when the record was written rather than when the event
+   occurred, so hour-level precision would imply resolution the source data
+   does not have. */
 const heroRow = document.getElementById("heroRow");
-const heroUnits = ["D", "H"].map(unit => {
+const heroValue = document.createElement("span");
+const heroUnitEl = document.createElement("span");
+(() => {
   const span = document.createElement("span");
   span.className = "hero-num";
-  const val = document.createElement("span");
-  const u = document.createElement("span");
-  u.className = "hero-unit";
-  u.textContent = unit;
-  span.append(val, u);
+  heroUnitEl.className = "hero-unit";
+  span.append(heroValue, heroUnitEl);
   heroRow.appendChild(span);
-  return val;
-});
+})();
 
 /* ---------- render ---------- */
 function render() {
@@ -526,15 +535,15 @@ function render() {
 
   document.documentElement.style.setProperty("--status", delivered ? "var(--green)" : "var(--cyan)");
 
-  /* Hero shows elapsed time; the caption carries the inclusive day number.
-     Both are true and they differ by up to a day, so the page states each
-     rather than leaving the reader to guess which one "05" meant. */
-  const endMoment = delivered ? finalStage.date : now;
-  const elapsedMs = Math.max(0, endMoment - CONFIG.approvalDate);
-  heroUnits[0].textContent = pad(Math.floor(elapsedMs / DAY_MS));
-  heroUnits[1].textContent = pad(Math.floor((elapsedMs % DAY_MS) / 3600000));
+  /* Hero shows elapsed whole days; the caption carries the inclusive day
+     number. Both are true and they differ by one, so the page states each
+     rather than leaving the reader to guess which one a bare number meant.
+     Both are computed from midnight so the hero rolls over at midnight. */
+  const elapsedDays = Math.max(0, Math.round((endDay - start) / DAY_MS));
+  heroValue.textContent = pad(elapsedDays);
+  heroUnitEl.textContent = elapsedDays === 1 ? "DAY" : "DAYS";
   document.getElementById("heroLabel").textContent =
-    delivered ? "ELAPSED FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
+    delivered ? "DAYS FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
   document.getElementById("heroCaption").textContent =
     delivered
       ? "DELIVERED ON DAY " + dayNum + " OF ~" + CONFIG.typicalDays + " TYPICAL"
@@ -566,21 +575,30 @@ function render() {
     const cell = document.createElement("div");
     cell.className = "day";
     const cellDate = new Date(start.getTime() + (n - 1) * DAY_MS);
-    cell.title = "Day " + n + " · " + fmtDate(cellDate);
+    const hit = milestoneDays.has(n);
+    cell.title = "Day " + n + " · " + fmtDate(cellDate) + (hit ? " · milestone" : "");
+    // Every elapsed day lights, the same way index.html's segment bar works.
+    // Milestones add a marker on top, so a day reads as both "elapsed" and
+    // "something happened" rather than the two being mutually exclusive.
     const isPast = n <= dayNum;
     const over = n > CONFIG.typicalDays;
-    if (over) cell.classList.add("over");
-    if (isPast) cell.classList.add(over ? "over" : "past");
-    if (milestoneDays.has(n)) cell.classList.add("milestone");
+    if (isPast) cell.classList.add(over ? "over" : "lit");
+    else if (over) cell.classList.add("over-future");
+    if (hit) cell.classList.add("milestone");
     if (delivered && n === dayNum) cell.classList.add("delivered");
     if (!delivered && n === dayNum) cell.classList.add("today");
     grid.appendChild(cell);
   }
-  // A dim reference date, not an expectation. Deliberately not labelled
-  // "expected" and deliberately not a stat card: ~12 days is a community
-  // average, and calling Aug 25 "expected" would make Aug 26 read as failure.
+  /* Derived, never hardcoded. "AROUND" is load-bearing: ~12 days is a community
+     average, not a USCIS commitment, so passing this date is not a failure. Past
+     it the card goes amber at most and says so in words — never red. */
   const typicalEnd = new Date(start.getTime() + (CONFIG.typicalDays - 1) * DAY_MS);
-  document.getElementById("gridCaption").textContent = "~" + fmtShort(typicalEnd) + " TYPICAL";
+  const pastTypical = !delivered && dayNum > CONFIG.typicalDays;
+  const expVal = document.getElementById("expectedVal");
+  expVal.textContent = fmtDate(typicalEnd);
+  expVal.style.color = pastTypical ? "var(--amber)" : "var(--text)";
+  document.getElementById("expectedLabel").textContent =
+    pastTypical ? "LONGER THAN TYPICAL" : "EXPECTED AROUND";
 
   /* pipeline */
   const pipe = document.getElementById("pipeline");
@@ -619,28 +637,18 @@ function render() {
     });
   }
 
-  /* days since last movement — the number that actually signals a problem */
-  const moments = stagesDone.map(s => midnight(s.date))
-    .concat(CONFIG.notes.map(n => midnight(n.date)));
-  const last = new Date(Math.max.apply(null, moments));
-  const sinceMove = Math.max(0, Math.round((today - last) / DAY_MS));
-  const smEl = document.getElementById("sinceMove");
-  smEl.textContent = delivered ? "—" : sinceMove;
-  smEl.style.color = (!delivered && sinceMove >= 7) ? "var(--amber)" : "var(--text)";
-
   document.getElementById("stageCount").textContent =
     stagesDone.length + " / " + CONFIG.stages.length;
 }
 
 render();
 
-/* Ticks by the hour, not the second — the hero's finest unit is hours, and a
-   seconds display would imply a precision this process does not have. */
-(function scheduleHour() {
+/* Ticks by the day. USCIS writes status in a nightly batch, so anything finer
+   would imply a precision the source data does not have. */
+(function scheduleMidnight() {
   const now = new Date();
-  const next = new Date(now);
-  next.setHours(now.getHours() + 1, 0, 5, 0);
-  setTimeout(() => { render(); scheduleHour(); }, next - now);
+  const next = new Date(now); next.setHours(24, 0, 5, 0);
+  setTimeout(() => { render(); scheduleMidnight(); }, next - now);
 })();
 </script>
 </body>

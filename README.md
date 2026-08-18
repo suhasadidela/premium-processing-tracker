@@ -5,7 +5,7 @@ Two pages covering the two halves of the wait for an EAD card.
 | Page | Covers | State |
 |---|---|---|
 | [`index.html`](index.html) | I-765 filing → premium processing decision | **Complete**, frozen |
-| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 2 of 6 stages |
+| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 2 of 5 stages |
 
 **Live:** https://suhasadidela.github.io/premium-processing-tracker/ ·
 [card tracker](https://suhasadidela.github.io/premium-processing-tracker/card.html)
@@ -111,12 +111,12 @@ state, by construction:
 - Passing day 12 is **not** an error. The grid appends amber cells rather than
   clipping or turning red, and the pill reads LONGER THAN TYPICAL. Amber means
   unusual, not wrong. Red is not in this page's vocabulary at all.
-- The grid's reference line stays `~AUG 25 TYPICAL` whether or not that date has
-  passed. It is a reference, not a target that can be missed.
-- The number that would actually indicate a problem is **days since last
-  movement**, not days elapsed — a case can sit at day 20 and be fine, or sit
-  eight days with no stage change and be worth a phone call. That stat goes
-  amber at 7 days; the day count never does.
+- The day grid lights **every elapsed day**, the same way `index.html`'s segment
+  bar does, with milestone days carrying an extra marker on top so they read as
+  both "elapsed" and "something happened". Past day 12 it appends amber cells
+  rather than clipping.
+- The expected-date card says **AROUND**, and past that date goes amber and
+  relabels to LONGER THAN TYPICAL rather than turning red.
 
 If you later find yourself adding "days left until the card arrives" to
 `card.html`, stop. That number does not exist.
@@ -170,7 +170,7 @@ re-check all three at a wide desktop window *and* a phone width:
 Both pages are checked against all three at 1920×1080, 1366×768, 1280×640,
 1024×600, 375×812 and 320×568 before every push. `card.html` needs its own
 short-landscape values rather than a copy of `index.html`'s — it carries a
-six-row pipeline and a notes log on top of everything the first page has, and
+five-row pipeline and a notes log on top of everything the first page has, and
 reusing the first page's numbers made its hero *larger* on a short screen, not
 smaller.
 
@@ -220,8 +220,7 @@ const CONFIG = {
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
     { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "New Card Is Being Produced", date: null },
-    { name: "Card Was Mailed To Me",      date: null },
-    { name: "Card Was Picked Up By USPS", date: null },
+    { name: "Tracking Number Received",   date: null, own: true },
     { name: "Card Was Delivered To Me",   date: null }
   ],
 
@@ -237,23 +236,32 @@ const CONFIG = {
 the stage count, days-since-last-movement — derives from that. Nothing is
 entered twice.
 
-### Six stages: five official, one personal
+### Five stages: three official, two personal
 
-Five of the six names are **USCIS's verbatim portal wording**. Do not reword
-them — the page's value is that it matches what the portal literally says, so a
-paraphrase makes it harder to reconcile the two, not easier.
+Three names are **USCIS's verbatim portal wording**. Do not reword them — the
+page's value is that it matches what the portal literally says, so a paraphrase
+makes it harder to reconcile the two, not easier.
 
-The exception is `Case Approved In Portal`, marked `own: true`. That is a
-personal milestone recording when the approval actually showed up in the portal,
-which is not a USCIS status at all. It renders with a **hollow dot** and a
-lighter weight so it reads as annotation sitting alongside the official states
-rather than as one of them. Any future personal milestone should carry the same
-flag.
+| Stage | Kind | Dot |
+|---|---|---|
+| Case Approved | USCIS | filled |
+| Case Approved In Portal | personal | hollow |
+| New Card Is Being Produced | USCIS | filled |
+| Tracking Number Received | personal | hollow |
+| Card Was Delivered To Me | USCIS | filled |
+
+The two personal ones carry `own: true` and render with a **hollow dot** and
+lighter weight, so they read as annotation sitting alongside the official states
+rather than as USCIS statuses. Any future personal milestone should carry the
+same flag.
+
+`Tracking Number Received` is the event USCIS itself calls **"Card Was Mailed To
+Me"** — that is the wording the portal will show. It is tracked here under the
+personal name because what is actually being recorded is the moment the tracking
+number arrived, which is not the same instant USCIS writes its status row.
 
 Anything that is not a milestone at all — "no movement today", a phone call —
 belongs in `notes`, which render below the stat cards and are visibly quieter.
-Stages and notes both feed days-since-last-movement, because for that number
-what matters is whether *anything* happened.
 
 `notes` is capped in height and scrolls internally. Notes accumulate without
 bound over a long wait, and without the cap invariant 3 holds today and breaks
@@ -271,29 +279,49 @@ one is ambiguous.
 `index.html` counts **inclusively** — the filing day is day 1 — because the
 30-business-day guarantee is defined that way. Card delivery has no such
 definition, so inclusive counting here would be inherited rather than required,
-and "05" alone would be genuinely unclear: four days had actually passed.
+and a bare "5" would be genuinely unclear: four days had actually passed.
 
-So the hero shows **elapsed** time as days and hours, and the caption directly
-beneath carries the **inclusive** day number against the typical range. On
-Aug 18 that reads `04D 03H` over `DAY 5 OF ~12 TYPICAL` — both true, neither
-guessed at.
+So the hero shows **elapsed whole days**, and the caption directly beneath
+carries the **inclusive** day number against the typical range. On Aug 18 that
+reads `04 DAYS` over `DAY 5 OF ~12 TYPICAL` — both true, neither guessed at.
 
-This is why `approvalDate` carries a time (2:00 PM) rather than just a date.
-With hours on screen, a midnight approval time would overstate elapsed by most
-of a day.
+### Days, not hours
 
-The grid's caption is a dim reference date — `~AUG 25 TYPICAL` — and
-deliberately not labelled "expected" and deliberately not a stat card. Calling
-Aug 25 expected would make Aug 26 read as failure.
+The hero deliberately has no hours component, and `approvalDate` deliberately
+carries no time.
+
+USCIS writes case status in a nightly batch, roughly 3–7am ET. The portal
+timestamp records **when the row was written, not when the event happened** —
+decisions are frequently logged days after they are actually made. An hours
+readout would render a precision the source data does not have, and would
+invite reading meaning into a number that is an artifact of batch timing.
+
+Days are the finest honest unit, so the page renders once a day at midnight
+rather than hourly.
+
+### The expected-date card
+
+`EXPECTED AROUND / Aug 25, 2026` is derived from `approvalDate + typicalDays`,
+never hardcoded. **"AROUND" is load-bearing** — ~12 days is a community average,
+not a USCIS commitment, and the page must not imply Aug 26 is a failure.
+
+Past that date the card goes **amber at most** and the label changes to
+`LONGER THAN TYPICAL`. It never turns red and never reads as overdue. There is
+no red anywhere on this page; that is asserted in testing, not just intended.
+
+> Note: this card replaced **DAYS SINCE LAST MOVEMENT**. That stat was the one
+> number that would actually signal a stalled case — a case can sit at day 20
+> and be fine, or sit eight days with no stage change and be worth a phone call.
+> The expected date does not carry that signal. If the wait starts feeling
+> stuck, the pipeline dates are where to look.
 
 When the final stage gets a date the page switches to a result rather than a
 wait — the accent turns green, the hero relabels to DAYS FROM APPROVAL TO
 DELIVERY and holds at the delivery day instead of following the wall clock, and
 days-since-last-movement becomes `—` because nothing is pending.
 
-`card.html` re-renders once an hour, not every second. Hours are the finest unit
-on screen; a ticking seconds display would imply a precision the underlying
-process does not have.
+`card.html` re-renders once a day, just after midnight. See "Days, not hours"
+above for why anything finer would be false precision.
 
 ## Interaction
 
