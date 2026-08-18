@@ -317,12 +317,23 @@
   }
   .lbl-narrow { display: none; }
 
+  /* On a small phone the clamps are already at their floors, so the only room
+     left is in the fixed minimums themselves — five pipeline rows plus notes
+     otherwise overflow a 320px-tall-ish screen. */
   @media (max-width: 420px) {
     .lbl-wide { display: none; }
     .lbl-narrow { display: inline; }
     .links-row { gap: 6px; }
     .ext-link { font-size: 8.5px; padding: 5px 8px; letter-spacing: 0.08em; }
     .stage-name { letter-spacing: 0.02em; }
+    .hero { margin-top: 8px; }
+    .status-wrap { margin: 8px 0 9px; }
+    .grid-caption { margin-top: 4px; }
+    .stage { padding: 2px 0; }
+    .notes { margin-top: 7px; }
+    .stat-grid { margin-top: 8px; }
+    .stat-box { padding: 6px 8px; }
+    .stat-val { font-size: 17px; }
   }
   /* Short landscape. This page carries a 5-row pipeline plus notes on top of
      everything index.html has, so the whole rhythm tightens, not just the hero. */
@@ -392,8 +403,6 @@
 
   <div class="links-row">
     <a class="ext-link" href="index.html">← <span class="lbl-wide">30-DAY PREMIUM PROCESSING (COMPLETE)</span><span class="lbl-narrow">PREMIUM PROCESSING</span></a>
-    <a class="ext-link" href="https://www.reddit.com/r/f1visa/comments/1r6p9k0/optstem_opt_processing_timelines_megathread/" target="_blank" rel="noopener noreferrer"><span class="lbl-wide">REDDIT // OPT TIMELINES</span><span class="lbl-narrow">REDDIT</span> ↗</a>
-    <a class="ext-link" href="https://opt-tracker.com/" target="_blank" rel="noopener noreferrer">OPT TRACKER ↗</a>
   </div>
 </div>
 
