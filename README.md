@@ -4,6 +4,11 @@ A countdown to the 30-business-day USCIS premium processing deadline.
 
 **Live:** https://suhasadidela.github.io/premium-processing-tracker/
 
+> **Approved Fri Aug 14, 2026 — business day 19 of 30, eleven days inside the
+> guarantee.** The tracker is frozen at that moment: the clock is stopped, the
+> status reads APPROVED, and nothing re-renders. Setting `approved` back to
+> `null` in `CONFIG` returns it to a live countdown.
+
 ## The problem
 
 Premium processing for an I-765 carries a 30 **business day** guarantee. That
@@ -132,6 +137,7 @@ const CONFIG = {
   lastDay:     new Date(2026, 7, 31),
   deadline:    new Date(2026, 7, 31, 23, 59, 59),
   totalBusinessDays: 30,
+  approved:    new Date(2026, 7, 14, 14, 0, 0),  // null while still pending
   receiptNumber: "",     // keep empty — see note below
   showReceipt: false,
   uscisUrl: "https://egov.uscis.gov/"
@@ -143,12 +149,21 @@ Months are zero-indexed — January is `0`, July is `6`.
 `lastDay` and `deadline` are the counted deadline. `estimated` is displayed for
 reference and is not derived from the business-day math.
 
+`approved` is the single switch between the two states. When it holds a date,
+`render()` treats that moment as "now" instead of the wall clock, the 1-second
+interval is never started, and the labels change to past tense. When it is
+`null`, everything counts live again.
+
 ## Interaction
 
-- Clicking the clock (or Enter/Space when focused) toggles between time
-  remaining and time since filing. The hint fades permanently after first use.
 - Status: **ON TRACK** (cyan) → **DUE SOON** (amber, last 3 business days) →
-  **OVERDUE** (red). The clock digits and segment bar take the status color.
+  **OVERDUE** (red), and **APPROVED** (green) once a decision lands. The clock
+  digits and segment bar take the status color.
+- While pending, clicking the clock (or Enter/Space when focused) toggles
+  between time remaining and time since filing; the hint fades permanently
+  after first use. Once approved the toggle is removed rather than left inert —
+  there is only one duration left to show, so the hero stops being a control
+  and drops its `role`, `tabindex`, and pointer cursor.
 
 ## Deploying
 

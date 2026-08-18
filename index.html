@@ -21,6 +21,7 @@
     --cyan: #4CC9F0;
     --amber: #F5A623;
     --red: #FF5C5C;
+    --green: #4ADE80;
     --seg-off: #1B222D;
     --status: var(--cyan);
   }
@@ -337,11 +338,11 @@
     <div class="stat-grid">
       <div class="stat-box">
         <div class="stat-val" id="bdPassed"></div>
-        <div class="stat-label">BUSINESS DAYS PASSED</div>
+        <div class="stat-label" id="bdPassedLabel">BUSINESS DAYS PASSED</div>
       </div>
       <div class="stat-box">
         <div class="stat-val" id="bdLeft"></div>
-        <div class="stat-label">BUSINESS DAYS LEFT</div>
+        <div class="stat-label" id="bdLeftLabel">BUSINESS DAYS LEFT</div>
       </div>
     </div>
 
@@ -351,7 +352,7 @@
         <div class="footer-val" id="filedVal"></div>
       </div>
       <div style="text-align:center">
-        <div class="footer-label">ESTIMATED</div>
+        <div class="footer-label" id="midLabel">ESTIMATED</div>
         <div class="footer-val" id="estVal" style="color:var(--cyan)"></div>
       </div>
       <div style="text-align:right">
@@ -379,6 +380,9 @@ const CONFIG = {
   lastDay:     new Date(2026, 7, 31),               // Aug 31, 2026
   deadline:    new Date(2026, 7, 31, 23, 59, 59),   // Aug 31, 11:59:59 PM
   totalBusinessDays: 30,
+  // Case approved — the tracker is frozen at this moment and no longer ticks.
+  // Set approved to null to return it to a live countdown.
+  approved: new Date(2026, 7, 14, 14, 0, 0),        // Fri Aug 14, 2026, 2:00 PM
   // Left empty on purpose. This file is served verbatim to every visitor, so a
   // value here is public even with showReceipt off — hiding the line only stops
   // it rendering, it does not stop View Source. Keep it out of the deployed file.
@@ -460,8 +464,15 @@ if (CONFIG.showReceipt) {
   document.getElementById("receiptLine").style.display = "none";
 }
 document.getElementById("filedVal").textContent = fmtDate(CONFIG.filedDate);
-document.getElementById("estVal").textContent = fmtDate(CONFIG.estimated);
 document.getElementById("lastVal").textContent = fmtDate(CONFIG.lastDay);
+if (CONFIG.approved) {
+  // An estimate is only interesting before the decision arrives.
+  document.getElementById("midLabel").textContent = "APPROVED";
+  document.getElementById("estVal").textContent = fmtDate(CONFIG.approved);
+  document.getElementById("estVal").style.color = "var(--green)";
+} else {
+  document.getElementById("estVal").textContent = fmtDate(CONFIG.estimated);
+}
 
 const segBar = document.getElementById("segBar");
 for (let i = 1; i <= CONFIG.totalBusinessDays; i++) {
@@ -486,7 +497,12 @@ const unitEls = ["D","H","M","S"].map(unit => {
   return val;
 });
 
+/* ---------- approved: freeze everything at the decision moment ---------- */
+const APPROVED = CONFIG.approved || null;
+
 /* ---------- toggle ---------- */
+// Only meaningful while counting down. Once approved there is one duration to
+// show, so the hero stops being a control.
 const hero = document.getElementById("hero");
 function toggleMode() {
   mode = mode === "remaining" ? "passed" : "remaining";
@@ -494,18 +510,27 @@ function toggleMode() {
   document.body.classList.add("tapped");
   render();
 }
-hero.addEventListener("click", toggleMode);
-hero.addEventListener("keydown", e => {
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMode(); }
-});
+if (APPROVED) {
+  hero.removeAttribute("role");
+  hero.removeAttribute("tabindex");
+  hero.removeAttribute("aria-label");
+  hero.style.cursor = "default";
+  document.body.classList.add("tapped");
+} else {
+  hero.addEventListener("click", toggleMode);
+  hero.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleMode(); }
+  });
+}
 
 /* ---------- render ---------- */
 function render() {
-  const now = new Date();
+  // Frozen at the approval moment, so every derived value below stops there too.
+  const now = APPROVED || new Date();
 
   const remainingMs = Math.max(0, CONFIG.deadline - now);
   const passedMs = Math.max(0, now - CONFIG.filedDate);
-  const diffMs = mode === "remaining" ? remainingMs : passedMs;
+  const diffMs = APPROVED ? passedMs : (mode === "remaining" ? remainingMs : passedMs);
   const expired = remainingMs === 0;
 
   unitEls[0].textContent = pad(Math.floor(diffMs / 86400000));
@@ -514,21 +539,29 @@ function render() {
   unitEls[3].textContent = pad(Math.floor((diffMs % 60000) / 1000));
 
   document.getElementById("heroLabel").textContent =
-    mode === "remaining"
-      ? (expired ? "WINDOW CLOSED" : "TIME LEFT UNTIL AUG 31, 11:59 PM")
-      : "TIME SINCE FILING";
+    APPROVED
+      ? "TIME FROM FILING TO APPROVAL"
+      : (mode === "remaining"
+          ? (expired ? "WINDOW CLOSED" : "TIME LEFT UNTIL AUG 31, 11:59 PM")
+          : "TIME SINCE FILING");
   document.getElementById("heroHint").textContent =
-    "TAP TO SHOW " + (mode === "remaining" ? "TIME PASSED" : "TIME LEFT");
+    APPROVED ? "" : "TAP TO SHOW " + (mode === "remaining" ? "TIME PASSED" : "TIME LEFT");
 
   const weekday = now.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
   const isoToday = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
   const todayEl = document.getElementById("todayLine");
-  todayEl.textContent = weekday + " · " + isoToday;
-  if (!isBusinessDay(now)) {
-    const off = document.createElement("span");
-    off.className = "today-off";
-    off.textContent = " · NON-BUSINESS DAY";
-    todayEl.appendChild(off);
+  if (APPROVED) {
+    // The header line stops being "today" and becomes the moment it stopped.
+    const t = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    todayEl.textContent = weekday + " · " + isoToday + " · " + t;
+  } else {
+    todayEl.textContent = weekday + " · " + isoToday;
+    if (!isBusinessDay(now)) {
+      const off = document.createElement("span");
+      off.className = "today-off";
+      off.textContent = " · NON-BUSINESS DAY";
+      todayEl.appendChild(off);
+    }
   }
 
   const rawPassed = businessDaysThrough(CONFIG.filedDate, now);
@@ -537,7 +570,8 @@ function render() {
   const overdue = rawPassed > CONFIG.totalBusinessDays;
 
   let statusLabel = "ON TRACK", statusColor = "var(--cyan)";
-  if (overdue) { statusLabel = "OVERDUE"; statusColor = "var(--red)"; }
+  if (APPROVED) { statusLabel = "APPROVED"; statusColor = "var(--green)"; }
+  else if (overdue) { statusLabel = "OVERDUE"; statusColor = "var(--red)"; }
   else if (left <= 3) { statusLabel = "DUE SOON"; statusColor = "var(--amber)"; }
   document.documentElement.style.setProperty("--status", statusColor);
   document.getElementById("statusPill").textContent = "● " + statusLabel;
@@ -545,7 +579,8 @@ function render() {
   segs.forEach((el, i) => {
     const n = i + 1;
     el.classList.toggle("filled", n <= filled);
-    el.classList.toggle("current", n === filled && !overdue);
+    // Nothing is in progress any more, so no segment pulses.
+    el.classList.toggle("current", !APPROVED && n === filled && !overdue);
   });
   document.getElementById("segCaption").textContent =
     filled + " / " + CONFIG.totalBusinessDays + " BUSINESS DAYS" +
@@ -553,12 +588,21 @@ function render() {
 
   document.getElementById("bdPassed").textContent = rawPassed;
   const leftEl = document.getElementById("bdLeft");
-  leftEl.textContent = left;
-  leftEl.style.color = (left <= 3 && !overdue) ? "var(--amber)" : "var(--text)";
+  if (APPROVED) {
+    // "Days left" has nothing to count down to now; days early is the fact.
+    leftEl.textContent = left;
+    leftEl.style.color = "var(--green)";
+    document.getElementById("bdLeftLabel").textContent = "BUSINESS DAYS EARLY";
+    document.getElementById("bdPassedLabel").textContent = "BUSINESS DAYS TAKEN";
+  } else {
+    leftEl.textContent = left;
+    leftEl.style.color = (left <= 3 && !overdue) ? "var(--amber)" : "var(--text)";
+  }
 }
 
 render();
-setInterval(render, 1000);
+// A frozen tracker has nothing to re-render.
+if (!APPROVED) setInterval(render, 1000);
 </script>
 </body>
 </html>
