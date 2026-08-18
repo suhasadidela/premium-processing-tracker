@@ -5,7 +5,7 @@ Two pages covering the two halves of the wait for an EAD card.
 | Page | Covers | State |
 |---|---|---|
 | [`index.html`](index.html) | I-765 filing → premium processing decision | **Complete**, frozen |
-| [`card.html`](card.html) | Approval → physical card in hand | **In progress** |
+| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 2 of 6 stages |
 
 **Live:** https://suhasadidela.github.io/premium-processing-tracker/ ·
 [card tracker](https://suhasadidela.github.io/premium-processing-tracker/card.html)
@@ -109,9 +109,10 @@ state, by construction:
 - The caption keeps the tilde — `DAY 5 OF ~12 TYPICAL`. The tilde is doing real
   work; dropping it silently converts a typical range into a deadline.
 - Passing day 12 is **not** an error. The grid appends amber cells rather than
-  clipping or turning red, the pill reads LONGER THAN TYPICAL, and the caption
-  says `STILL NORMAL` outright. Amber means unusual, not wrong. Red is not in
-  this page's vocabulary at all.
+  clipping or turning red, and the pill reads LONGER THAN TYPICAL. Amber means
+  unusual, not wrong. Red is not in this page's vocabulary at all.
+- The grid's reference line stays `~AUG 25 TYPICAL` whether or not that date has
+  passed. It is a reference, not a target that can be missed.
 - The number that would actually indicate a problem is **days since last
   movement**, not days elapsed — a case can sit at day 20 and be fine, or sit
   eight days with no stage change and be worth a phone call. That stat goes
@@ -167,10 +168,17 @@ re-check all three at a wide desktop window *and* a phone width:
    its padding was capped by `vh` too.
 
 Both pages are checked against all three at 1920×1080, 1366×768, 1280×640,
-1024×600 and 375×812 before every push. `card.html` needs its own short-landscape
-values rather than a copy of `index.html`'s — it carries a five-row pipeline and
-a notes log on top of everything the first page has, and reusing the first
-page's numbers made its hero *larger* on a short screen, not smaller.
+1024×600, 375×812 and 320×568 before every push. `card.html` needs its own
+short-landscape values rather than a copy of `index.html`'s — it carries a
+six-row pipeline and a notes log on top of everything the first page has, and
+reusing the first page's numbers made its hero *larger* on a short screen, not
+smaller.
+
+**Check `card.html` with notes present, not just as it currently stands.** With
+`notes: []` the block is hidden and the page fits easily; adding a single note
+overflowed 1366×768 by 32px, 1280×640 by 27px and 320×568 by 31px before the
+rhythm was tightened and the list capped. An empty optional block passing is not
+evidence the populated one does.
 
 ## Configuration — `index.html`
 
@@ -210,17 +218,16 @@ const CONFIG = {
 
   stages: [
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
+    { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "New Card Is Being Produced", date: null },
     { name: "Card Was Mailed To Me",      date: null },
     { name: "Card Was Picked Up By USPS", date: null },
     { name: "Card Was Delivered To Me",   date: null }
   ],
 
-  notes: [
-    { date: new Date(2026, 7, 16), text: "Portal updated." }
-  ],
+  notes: [],            // empty hides the whole block
 
-  trackingNumber: "",   // when set, the USPS row appears; empty hides it
+  trackingNumber: "",   // empty = generic USPS link; set = deep link to parcel
   uscisUrl: "https://egov.uscis.gov/"
 };
 ```
@@ -230,27 +237,63 @@ const CONFIG = {
 the stage count, days-since-last-movement — derives from that. Nothing is
 entered twice.
 
-`stages` are the five official USCIS case states and nothing else. Anything you
-observe that is not a state change — "no movement today", a phone call, a portal
-quirk — belongs in `notes`. That separation is why the notes render below the
-pipeline and dimmer than it: an observation must never be able to pass for a
-USCIS stage. Both feed days-since-last-movement, because for that number what
-matters is whether *anything* happened.
+### Six stages: five official, one personal
 
-`trackingNumber` renders a live USPS link when set. When empty the row is
-removed entirely rather than left as an empty placeholder.
+Five of the six names are **USCIS's verbatim portal wording**. Do not reword
+them — the page's value is that it matches what the portal literally says, so a
+paraphrase makes it harder to reconcile the two, not easier.
 
-Day counting is inclusive, matching `index.html`: the approval day itself is
-day 1, so Aug 18 is day 5 of the card wait.
+The exception is `Case Approved In Portal`, marked `own: true`. That is a
+personal milestone recording when the approval actually showed up in the portal,
+which is not a USCIS status at all. It renders with a **hollow dot** and a
+lighter weight so it reads as annotation sitting alongside the official states
+rather than as one of them. Any future personal milestone should carry the same
+flag.
+
+Anything that is not a milestone at all — "no movement today", a phone call —
+belongs in `notes`, which render below the stat cards and are visibly quieter.
+Stages and notes both feed days-since-last-movement, because for that number
+what matters is whether *anything* happened.
+
+`notes` is capped in height and scrolls internally. Notes accumulate without
+bound over a long wait, and without the cap invariant 3 holds today and breaks
+silently on whichever note eventually pushes the card past the fold.
+
+`trackingNumber` deep-links to the parcel and displays the number when set. When
+empty the link stays, pointing at USPS's general tracking page — a control that
+still goes somewhere useful beats a hidden or dead one.
+
+### Elapsed in the hero, inclusive day in the caption
+
+These are two different numbers and the page shows both, because showing only
+one is ambiguous.
+
+`index.html` counts **inclusively** — the filing day is day 1 — because the
+30-business-day guarantee is defined that way. Card delivery has no such
+definition, so inclusive counting here would be inherited rather than required,
+and "05" alone would be genuinely unclear: four days had actually passed.
+
+So the hero shows **elapsed** time as days and hours, and the caption directly
+beneath carries the **inclusive** day number against the typical range. On
+Aug 18 that reads `04D 03H` over `DAY 5 OF ~12 TYPICAL` — both true, neither
+guessed at.
+
+This is why `approvalDate` carries a time (2:00 PM) rather than just a date.
+With hours on screen, a midnight approval time would overstate elapsed by most
+of a day.
+
+The grid's caption is a dim reference date — `~AUG 25 TYPICAL` — and
+deliberately not labelled "expected" and deliberately not a stat card. Calling
+Aug 25 expected would make Aug 26 read as failure.
 
 When the final stage gets a date the page switches to a result rather than a
 wait — the accent turns green, the hero relabels to DAYS FROM APPROVAL TO
 DELIVERY and holds at the delivery day instead of following the wall clock, and
 days-since-last-movement becomes `—` because nothing is pending.
 
-`card.html` re-renders once just after midnight, not every second. Days are the
-unit; a ticking seconds display would imply a precision the underlying process
-does not have.
+`card.html` re-renders once an hour, not every second. Hours are the finest unit
+on screen; a ticking seconds display would imply a precision the underlying
+process does not have.
 
 ## Interaction
 

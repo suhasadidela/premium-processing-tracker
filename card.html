@@ -86,7 +86,7 @@
   }
   .cursor { color: var(--cyan); animation: blink 1s step-end infinite; }
   @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
-  .header-right { text-align: right; }
+  .header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
   .today-line {
     color: var(--text);
     font-size: clamp(12px, 1.2vw, 17px);
@@ -112,18 +112,7 @@
     border-color: var(--cyan);
     background: rgba(76,201,240,0.08);
   }
-  .track-line {
-    color: var(--dim);
-    font-size: clamp(10px, 0.9vw, 12px);
-    letter-spacing: 0.1em;
-    line-height: 1;
-    margin-top: 7px;
-    text-align: right;
-  }
-  .track-line a { color: var(--cyan); text-decoration: none; font-weight: 600; }
-  .track-line a:hover { text-decoration: underline; }
-
-  .hero { text-align: center; margin-top: clamp(12px, 2vh, 30px); user-select: none; }
+  .hero { text-align: center; margin-top: clamp(10px, 1.6vh, 26px); user-select: none; }
   .hero-row {
     display: flex;
     justify-content: center;
@@ -135,7 +124,7 @@
     color: var(--status);
     /* One number, not four groups — it needs less room than index.html's clock,
        and this page carries a pipeline underneath that also needs the space. */
-    font-size: clamp(30px, min(12cqw, 11vh), 92px);
+    font-size: clamp(30px, min(12cqw, 9.6vh), 92px);
     white-space: nowrap;
     font-weight: 800;
     line-height: 1;
@@ -158,7 +147,7 @@
     font-weight: 700;
     margin-top: clamp(4px, 0.7vh, 9px);
   }
-  .status-wrap { text-align: center; margin: clamp(10px, 1.7vh, 22px) 0 clamp(11px, 1.7vh, 24px); }
+  .status-wrap { text-align: center; margin: clamp(8px, 1.35vh, 18px) 0 clamp(9px, 1.35vh, 20px); }
   .status-pill {
     display: inline-block;
     border: 1px solid var(--status);
@@ -179,7 +168,7 @@
   }
   .day {
     width: 100%;
-    height: clamp(15px, min(3.1vw, 4.3vh), 40px);
+    height: clamp(14px, min(3.1vw, 3.9vh), 40px);
     border-radius: 4px;
     background: var(--seg-off);
   }
@@ -204,13 +193,13 @@
   }
 
   /* ---- stage pipeline ---- */
-  .pipeline { margin: clamp(11px, 1.7vh, 22px) 0 0; }
+  .pipeline { margin: clamp(9px, 1.35vh, 18px) 0 0; }
   .stage {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: clamp(8px, 1.2vw, 16px);
-    padding: clamp(3px, 0.6vh, 8px) 0;
+    padding: clamp(2px, 0.45vh, 7px) 0;
     border-bottom: 1px solid var(--border);
   }
   .stage:last-child { border-bottom: 0; }
@@ -242,36 +231,54 @@
   .stage.next .stage-name { color: var(--dim); }
   .stage.final.done .stage-dot { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px color-mix(in srgb, var(--green) 55%, transparent); }
   .stage.final.done .stage-date { color: var(--green); }
+  /* Personal milestone, not a USCIS status: hollow dot and a quieter name, so
+     it reads as annotation alongside the official wording rather than as one
+     of USCIS's own states. */
+  .stage.own .stage-dot { background: transparent; border-color: var(--cyan); box-shadow: none; }
+  .stage.own .stage-name { color: var(--dim); font-weight: 500; }
+  .stage.own .stage-name::after {
+    content: " ·";
+    color: var(--border);
+  }
 
   /* ---- notes: deliberately below the pipeline and quieter than it, so an
          observation can never be mistaken for an official USCIS stage ---- */
-  .notes { margin-top: clamp(9px, 1.4vh, 18px); }
+  .notes { margin-top: clamp(7px, 1.1vh, 15px); }
+  /* Notes accumulate without bound over a long wait, so the block is capped and
+     scrolls internally. Otherwise invariant 3 holds today and quietly breaks on
+     whichever note pushes the card past the fold. */
+  #notesList {
+    max-height: clamp(20px, 4.4vh, 42px);
+    overflow-y: auto;
+  }
   .notes-head {
-    color: var(--border);
+    color: var(--dim);
     font-size: clamp(8.5px, 0.85vw, 11px);
     letter-spacing: 0.14em;
     font-weight: 700;
-    margin-bottom: clamp(4px, 0.8vh, 8px);
+    margin-bottom: clamp(3px, 0.5vh, 6px);
   }
+  /* Readable, not decorative — these were previously dim enough to be
+     effectively invisible while still occupying space. */
   .note {
-    color: var(--dim);
-    font-size: clamp(9px, 0.9vw, 12px);
+    color: var(--text);
+    font-size: clamp(9.5px, 0.95vw, 13px);
     letter-spacing: 0.04em;
-    line-height: 1.5;
+    line-height: 1.4;
   }
-  .note-date { color: var(--border); font-weight: 700; }
+  .note-date { color: var(--dim); font-weight: 700; }
 
   .stat-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: clamp(10px, 1.4vw, 20px);
-    margin: clamp(10px, 1.6vh, 22px) 0 0;
+    margin: clamp(8px, 1.3vh, 18px) 0 0;
   }
   .stat-box {
     background: var(--surface-hi);
     border: 1px solid var(--border);
     border-radius: 5px;
-    padding: clamp(7px, min(1.3vw, 1.3vh), 16px) clamp(10px, 1.4vw, 18px);
+    padding: clamp(6px, min(1.1vw, 1.1vh), 14px) clamp(10px, 1.4vw, 18px);
     text-align: center;
   }
   .stat-val {
@@ -326,25 +333,39 @@
     .links-row { gap: 6px; }
     .ext-link { font-size: 8.5px; padding: 5px 8px; letter-spacing: 0.08em; }
     .stage-name { letter-spacing: 0.02em; }
-    .hero { margin-top: 8px; }
-    .status-wrap { margin: 8px 0 9px; }
-    .grid-caption { margin-top: 4px; }
-    .stage { padding: 2px 0; }
-    .notes { margin-top: 7px; }
-    .stat-grid { margin-top: 8px; }
-    .stat-box { padding: 6px 8px; }
-    .stat-val { font-size: 17px; }
+    .hero { margin-top: 6px; }
+    .hero-num { font-size: clamp(24px, min(12cqw, 9.6vh), 92px); }
+    .hero-label { margin-top: 5px; }
+    .status-wrap { margin: 6px 0 7px; }
+    .day { height: clamp(12px, min(3.1vw, 3.9vh), 40px); }
+    .grid-caption { margin-top: 3px; }
+    .stage { padding: 1px 0; }
+    .stat-grid { margin-top: 7px; }
+    .stat-box { padding: 5px 8px; }
+    .stat-val { font-size: 15px; }
+    /* Notes have to be very tight here; the block still scrolls rather than
+       pushing the card off a small phone. */
+    .notes { margin-top: 5px; }
+    .notes-head { font-size: 8px; margin-bottom: 2px; }
+    .note { font-size: 9px; line-height: 1.35; }
+    #notesList { max-height: 20px; }
   }
   /* Short landscape. This page carries a 5-row pipeline plus notes on top of
      everything index.html has, so the whole rhythm tightens, not just the hero. */
   @media (max-height: 700px) and (min-width: 900px) {
-    .hero-num { font-size: clamp(28px, min(9cqw, 9vh), 72px); }
-    .hero { margin-top: clamp(8px, 1.2vh, 16px); }
-    .day { height: clamp(13px, min(2.4vw, 3.6vh), 30px); }
-    .status-wrap { margin: clamp(7px, 1.2vh, 14px) 0 clamp(8px, 1.2vh, 16px); }
-    .stage { padding: clamp(2px, 0.45vh, 6px) 0; }
-    .pipeline { margin-top: clamp(8px, 1.2vh, 16px); }
-    .stat-grid { margin-top: clamp(8px, 1.2vh, 16px); }
+    .hero-num { font-size: clamp(28px, min(9cqw, 8vh), 72px); }
+    .hero { margin-top: clamp(7px, 1.1vh, 14px); }
+    .day { height: clamp(12px, min(2.4vw, 3.2vh), 30px); }
+    .status-wrap { margin: clamp(6px, 1vh, 12px) 0 clamp(7px, 1vh, 14px); }
+    .stage { padding: clamp(2px, 0.4vh, 6px) 0; }
+    .pipeline { margin-top: clamp(7px, 1.1vh, 14px); }
+    .stat-grid { margin-top: clamp(7px, 1.1vh, 14px); }
+    .stat-box { padding: clamp(5px, 0.9vh, 12px) clamp(10px, 1.4vw, 18px); }
+    .stat-val { font-size: clamp(18px, min(2.6vw, 3vh), 32px); }
+    .grid-caption { margin-top: clamp(4px, 0.7vh, 9px); }
+    .notes { margin-top: clamp(5px, 0.8vh, 11px); }
+    .notes-head { margin-bottom: 3px; }
+    #notesList { max-height: clamp(17px, 3vh, 26px); }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before { animation: none !important; transition: none !important; }
@@ -362,12 +383,12 @@
       </div>
       <div class="header-right">
         <a class="uscis-link" id="uscis" href="https://egov.uscis.gov/" target="_blank" rel="noopener noreferrer">CHECK STATUS ↗</a>
-        <div class="track-line" id="trackLine">USPS <a id="trackLink" href="#" target="_blank" rel="noopener noreferrer"></a></div>
+        <a class="uscis-link" id="trackLink" href="https://tools.usps.com/tracking/?locale=en" target="_blank" rel="noopener noreferrer">USPS TRACKING ↗</a>
       </div>
     </div>
 
     <div class="hero">
-      <div class="hero-row"><span class="hero-num" id="heroNum"></span><span class="hero-unit" id="heroUnit"></span></div>
+      <div class="hero-row" id="heroRow"></div>
       <div class="hero-label" id="heroLabel"></div>
       <div class="hero-caption" id="heroCaption"></div>
     </div>
@@ -383,11 +404,6 @@
 
     <div class="pipeline" id="pipeline"></div>
 
-    <div class="notes" id="notesWrap">
-      <div class="notes-head">NOTES</div>
-      <div id="notesList"></div>
-    </div>
-
     <div class="stat-grid">
       <div class="stat-box">
         <div class="stat-val" id="sinceMove"></div>
@@ -397,6 +413,13 @@
         <div class="stat-val" id="stageCount"></div>
         <div class="stat-label">STAGES COMPLETE</div>
       </div>
+    </div>
+
+    <!-- Below the stats: notes are the least authoritative thing on the page,
+         and they no longer sit in prime vertical space above the fold. -->
+    <div class="notes" id="notesWrap">
+      <div class="notes-head">NOTES</div>
+      <div id="notesList"></div>
     </div>
 
   </div>
@@ -411,24 +434,28 @@
    CONFIG — the only thing to edit
    ============================================================ */
 const CONFIG = {
-  approvalDate: new Date(2026, 7, 14),   // Aug 14, 2026 — months are 0-indexed
-  typicalDays: 12,                       // TYPICAL, not promised. See note below.
+  // The time matters: the hero shows elapsed hours, so midnight would overstate
+  // it by most of a day. This is the actual approval moment.
+  approvalDate: new Date(2026, 7, 14, 14, 0, 0),   // Fri Aug 14, 2026, 2:00 PM
+  typicalDays: 12,                                 // TYPICAL, not promised.
 
-  // The five official USCIS case states, in order. Add a date as each lands.
+  // Stage names marked `own: true` are personal milestones, not USCIS statuses.
+  // Every other name here is USCIS's verbatim portal wording — do not reword
+  // them, or the page stops matching what the portal actually says. Personal
+  // milestones render with a hollow dot so the two never blur together.
   stages: [
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
+    { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "New Card Is Being Produced", date: null },
     { name: "Card Was Mailed To Me",      date: null },
     { name: "Card Was Picked Up By USPS", date: null },
     { name: "Card Was Delivered To Me",   date: null }
   ],
 
-  // Anything that is NOT an official stage goes here — "no change today",
-  // portal quirks, phone calls. Kept separate so an observation can never be
-  // mistaken for a USCIS state change.
-  notes: [
-    { date: new Date(2026, 7, 16), text: "Portal updated." }
-  ],
+  // Anything that is NOT a stage goes here — "no change today", phone calls,
+  // portal quirks. Kept separate so an observation can never be mistaken for a
+  // USCIS state change. Empty is fine; the whole block hides.
+  notes: [],
 
   trackingNumber: "",   // when set, the USPS row appears; empty hides it entirely
   uscisUrl: "https://egov.uscis.gov/"
@@ -456,15 +483,32 @@ function fmtShort(d) {
 /* ---------- static bits ---------- */
 document.getElementById("uscis").href = CONFIG.uscisUrl;
 
-// No empty placeholder: the whole row is removed until a number exists.
+// With a number, the link goes straight to that parcel and shows it. Without
+// one it still goes somewhere useful — USPS's tracking page — rather than
+// being a dead or hidden control.
+const trackEl = document.getElementById("trackLink");
 if (CONFIG.trackingNumber) {
-  const a = document.getElementById("trackLink");
-  a.textContent = CONFIG.trackingNumber;
-  a.href = "https://tools.usps.com/go/TrackConfirmAction?tLabels=" +
-           encodeURIComponent(CONFIG.trackingNumber);
+  trackEl.textContent = CONFIG.trackingNumber + " ↗";
+  trackEl.href = "https://tools.usps.com/go/TrackConfirmAction?tLabels=" +
+                 encodeURIComponent(CONFIG.trackingNumber);
 } else {
-  document.getElementById("trackLine").style.display = "none";
+  trackEl.textContent = "USPS TRACKING ↗";
+  trackEl.href = "https://tools.usps.com/tracking/?locale=en";
 }
+
+/* ---------- hero: two groups, days and hours, like index.html's clock ---------- */
+const heroRow = document.getElementById("heroRow");
+const heroUnits = ["D", "H"].map(unit => {
+  const span = document.createElement("span");
+  span.className = "hero-num";
+  const val = document.createElement("span");
+  const u = document.createElement("span");
+  u.className = "hero-unit";
+  u.textContent = unit;
+  span.append(val, u);
+  heroRow.appendChild(span);
+  return val;
+});
 
 /* ---------- render ---------- */
 function render() {
@@ -482,11 +526,15 @@ function render() {
 
   document.documentElement.style.setProperty("--status", delivered ? "var(--green)" : "var(--cyan)");
 
-  /* hero */
-  document.getElementById("heroNum").textContent = pad(dayNum);
-  document.getElementById("heroUnit").textContent = dayNum === 1 ? "DAY" : "DAYS";
+  /* Hero shows elapsed time; the caption carries the inclusive day number.
+     Both are true and they differ by up to a day, so the page states each
+     rather than leaving the reader to guess which one "05" meant. */
+  const endMoment = delivered ? finalStage.date : now;
+  const elapsedMs = Math.max(0, endMoment - CONFIG.approvalDate);
+  heroUnits[0].textContent = pad(Math.floor(elapsedMs / DAY_MS));
+  heroUnits[1].textContent = pad(Math.floor((elapsedMs % DAY_MS) / 3600000));
   document.getElementById("heroLabel").textContent =
-    delivered ? "DAYS FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
+    delivered ? "ELAPSED FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
   document.getElementById("heroCaption").textContent =
     delivered
       ? "DELIVERED ON DAY " + dayNum + " OF ~" + CONFIG.typicalDays + " TYPICAL"
@@ -528,10 +576,11 @@ function render() {
     if (!delivered && n === dayNum) cell.classList.add("today");
     grid.appendChild(cell);
   }
-  document.getElementById("gridCaption").textContent =
-    dayNum > CONFIG.typicalDays
-      ? "DAY " + dayNum + " · " + (dayNum - CONFIG.typicalDays) + " BEYOND TYPICAL — STILL NORMAL"
-      : "DAY " + dayNum + " OF ~" + CONFIG.typicalDays;
+  // A dim reference date, not an expectation. Deliberately not labelled
+  // "expected" and deliberately not a stat card: ~12 days is a community
+  // average, and calling Aug 25 "expected" would make Aug 26 read as failure.
+  const typicalEnd = new Date(start.getTime() + (CONFIG.typicalDays - 1) * DAY_MS);
+  document.getElementById("gridCaption").textContent = "~" + fmtShort(typicalEnd) + " TYPICAL";
 
   /* pipeline */
   const pipe = document.getElementById("pipeline");
@@ -540,6 +589,7 @@ function render() {
   CONFIG.stages.forEach((s, i) => {
     const row = document.createElement("div");
     row.className = "stage" + (s.date ? " done" : "") + (i === nextIdx ? " next" : "") +
+                    (s.own ? " own" : "") +
                     (i === CONFIG.stages.length - 1 ? " final" : "");
     const dot = document.createElement("div"); dot.className = "stage-dot";
     const nm = document.createElement("div"); nm.className = "stage-name"; nm.textContent = s.name;
@@ -584,11 +634,13 @@ function render() {
 
 render();
 
-/* Ticks by the day, not the second — re-render just after the next midnight. */
-(function scheduleMidnight() {
+/* Ticks by the hour, not the second — the hero's finest unit is hours, and a
+   seconds display would imply a precision this process does not have. */
+(function scheduleHour() {
   const now = new Date();
-  const next = new Date(now); next.setHours(24, 0, 5, 0);
-  setTimeout(() => { render(); scheduleMidnight(); }, next - now);
+  const next = new Date(now);
+  next.setHours(now.getHours() + 1, 0, 5, 0);
+  setTimeout(() => { render(); scheduleHour(); }, next - now);
 })();
 </script>
 </body>
