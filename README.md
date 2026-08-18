@@ -112,9 +112,9 @@ state, by construction:
   clipping or turning red, and the pill reads LONGER THAN TYPICAL. Amber means
   unusual, not wrong. Red is not in this page's vocabulary at all.
 - The day grid lights **every elapsed day**, the same way `index.html`'s segment
-  bar does, with milestone days carrying an extra marker on top so they read as
-  both "elapsed" and "something happened". Past day 12 it appends amber cells
-  rather than clipping.
+  bar does. Elapsed is lit, today pulses, future is dark — that is the whole
+  vocabulary, with no per-cell milestone markers. Past day 12 it appends amber
+  cells rather than clipping.
 - The expected-date card says **AROUND**, and past that date goes amber and
   relabels to LONGER THAN TYPICAL rather than turning red.
 
@@ -221,7 +221,7 @@ const CONFIG = {
     { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "New Card Is Being Produced", date: null },
     { name: "Tracking Number Received",   date: null, own: true },
-    { name: "Card Was Delivered To Me",   date: null }
+    { name: "Card Delivered",             date: null }
   ],
 
   notes: [],            // empty hides the whole block
@@ -232,9 +232,8 @@ const CONFIG = {
 ```
 
 **Updating it is one line.** "Card produced today" means putting today's date on
-`stages[1]`; everything else — the pipeline dot, the milestone cell in the grid,
-the stage count, days-since-last-movement — derives from that. Nothing is
-entered twice.
+`stages[2]`; everything else — the pipeline dot, the stage count — derives from
+that. Nothing is entered twice.
 
 ### Five stages: three official, two personal
 
@@ -242,18 +241,21 @@ Three names are **USCIS's verbatim portal wording**. Do not reword them — the
 page's value is that it matches what the portal literally says, so a paraphrase
 makes it harder to reconcile the two, not easier.
 
-| Stage | Kind | Dot |
-|---|---|---|
-| Case Approved | USCIS | filled |
-| Case Approved In Portal | personal | hollow |
-| New Card Is Being Produced | USCIS | filled |
-| Tracking Number Received | personal | hollow |
-| Card Was Delivered To Me | USCIS | filled |
+| Stage | Kind |
+|---|---|
+| Case Approved | USCIS |
+| Case Approved In Portal | personal |
+| New Card Is Being Produced | USCIS |
+| Tracking Number Received | personal |
+| Card Delivered | USCIS |
 
-The two personal ones carry `own: true` and render with a **hollow dot** and
-lighter weight, so they read as annotation sitting alongside the official states
-rather than as USCIS statuses. Any future personal milestone should carry the
-same flag.
+The two personal ones carry `own: true`, but **all completed stages render
+identically** — filled cyan dot, same weight. The flag is documentation rather
+than a style hook: it records which names came from the portal and which are
+personal, which matters when reconciling the list against USCIS, but the
+distinction is not drawn on screen.
+
+`Card Delivered` is shortened from USCIS's "Card Was Delivered To Me".
 
 `Tracking Number Received` is the event USCIS itself calls **"Card Was Mailed To
 Me"** — that is the wording the portal will show. It is tracked here under the
@@ -281,23 +283,12 @@ one is ambiguous.
 definition, so inclusive counting here would be inherited rather than required,
 and a bare "5" would be genuinely unclear: four days had actually passed.
 
-So the hero shows **elapsed whole days**, and the caption directly beneath
+So the hero shows **elapsed days and hours**, and the caption directly beneath
 carries the **inclusive** day number against the typical range. On Aug 18 that
-reads `04 DAYS` over `DAY 5 OF ~12 TYPICAL` — both true, neither guessed at.
+reads `04D 04H` over `DAY 5 OF ~12 TYPICAL` — both true, neither guessed at.
 
-### Days, not hours
-
-The hero deliberately has no hours component, and `approvalDate` deliberately
-carries no time.
-
-USCIS writes case status in a nightly batch, roughly 3–7am ET. The portal
-timestamp records **when the row was written, not when the event happened** —
-decisions are frequently logged days after they are actually made. An hours
-readout would render a precision the source data does not have, and would
-invite reading meaning into a number that is an artifact of batch timing.
-
-Days are the finest honest unit, so the page renders once a day at midnight
-rather than hourly.
+This is why `approvalDate` carries a time (2:00 PM). With hours on screen, a
+midnight approval time would overstate elapsed by most of a day.
 
 ### The expected-date card
 
@@ -320,8 +311,13 @@ wait — the accent turns green, the hero relabels to DAYS FROM APPROVAL TO
 DELIVERY and holds at the delivery day instead of following the wall clock, and
 days-since-last-movement becomes `—` because nothing is pending.
 
-`card.html` re-renders once a day, just after midnight. See "Days, not hours"
-above for why anything finer would be false precision.
+`card.html` re-renders once an hour. Hours are the finest unit on screen; a
+seconds display would imply a precision this process does not have.
+
+One caveat worth knowing: USCIS writes case status in a nightly batch, so a
+portal timestamp records when the row was written rather than when the event
+happened. The hours figure is honest about elapsed wall-clock time since
+approval — it is not evidence about when anything was actually decided.
 
 ## Interaction
 

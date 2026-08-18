@@ -184,18 +184,6 @@
   /* Past the typical range is longer-than-usual, not late. Amber, never red. */
   .day.over { background: var(--amber); box-shadow: 0 0 6px color-mix(in srgb, var(--amber) 53%, transparent); }
   .day.over-future { background: var(--seg-off); opacity: 0.8; }
-  /* Marker sits on top of the lit state rather than replacing it */
-  .day.milestone::after {
-    content: "";
-    position: absolute;
-    left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    width: clamp(4px, 0.55vw, 7px);
-    height: clamp(4px, 0.55vw, 7px);
-    border-radius: 50%;
-    background: var(--bg);
-    opacity: 0.9;
-  }
   .day.today { animation: pulse 1.4s ease-in-out infinite; }
   .day.delivered { background: var(--green); box-shadow: 0 0 6px color-mix(in srgb, var(--green) 53%, transparent); }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
@@ -239,15 +227,8 @@
   .stage.next .stage-name { color: var(--dim); }
   .stage.final.done .stage-dot { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px color-mix(in srgb, var(--green) 55%, transparent); }
   .stage.final.done .stage-date { color: var(--green); }
-  /* Personal milestone, not a USCIS status: hollow dot and a quieter name, so
-     it reads as annotation alongside the official wording rather than as one
-     of USCIS's own states. */
-  .stage.own .stage-dot { background: transparent; border-color: var(--cyan); box-shadow: none; }
-  .stage.own .stage-name { color: var(--dim); font-weight: 500; }
-  .stage.own .stage-name::after {
-    content: " ·";
-    color: var(--border);
-  }
+  /* Personal vs USCIS stages render identically — the distinction is kept in
+     CONFIG for the record, not drawn on screen. */
 
   /* ---- notes: deliberately below the pipeline and quieter than it, so an
          observation can never be mistaken for an official USCIS stage ---- */
@@ -294,6 +275,12 @@
     font-size: clamp(20px, min(2.8vw, 3.5vh), 38px);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+  }
+  /* A date is a long string; at the numeric size it dominates the card. Match
+     index.html's footer dates so it reads as a date, not a headline figure. */
+  .stat-val.is-date {
+    font-size: clamp(13px, min(1.55vw, 2vh), 21px);
+    font-weight: 600;
   }
   .stat-label {
     color: var(--dim);
@@ -409,7 +396,7 @@
 
     <div class="stat-grid">
       <div class="stat-box">
-        <div class="stat-val" id="expectedVal"></div>
+        <div class="stat-val is-date" id="expectedVal"></div>
         <div class="stat-label" id="expectedLabel">EXPECTED AROUND</div>
       </div>
       <div class="stat-box">
@@ -437,26 +424,25 @@
    CONFIG — the only thing to edit
    ============================================================ */
 const CONFIG = {
-  // Date only, no time. USCIS writes case status in a nightly batch, so the
-  // portal timestamp records when the row was written, not when the decision
-  // happened. Days are the finest unit the source data actually supports.
-  approvalDate: new Date(2026, 7, 14),   // Fri Aug 14, 2026
-  typicalDays: 12,                       // TYPICAL, not promised.
+  // The hero shows elapsed hours, so this carries the actual approval time —
+  // midnight would overstate elapsed by most of a day.
+  approvalDate: new Date(2026, 7, 14, 14, 0, 0),   // Fri Aug 14, 2026, 2:00 PM
+  typicalDays: 12,                                 // TYPICAL, not promised.
 
-  // Stage names marked `own: true` are personal milestones, not USCIS statuses.
-  // Every other name here is USCIS's verbatim portal wording — do not reword
-  // them, or the page stops matching what the portal actually says. Personal
-  // milestones render with a hollow dot so the two never blur together.
+  // `own: true` marks a personal milestone rather than a USCIS status. All
+  // completed stages render identically — the flag is documentation, not a
+  // style hook — but the distinction matters when reconciling this list against
+  // the portal: unmarked names are USCIS's verbatim wording and should not be
+  // reworded.
   //
-  // Note: "Tracking Number Received" is a personal milestone. USCIS's own
-  // wording for that event is "Card Was Mailed To Me" — that is what the portal
-  // will display when it happens.
+  // Note: "Tracking Number Received" is personal. USCIS's own wording for that
+  // event is "Card Was Mailed To Me" — that is what the portal will display.
   stages: [
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
     { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "New Card Is Being Produced", date: null },
     { name: "Tracking Number Received",   date: null, own: true },
-    { name: "Card Was Delivered To Me",   date: null }
+    { name: "Card Delivered",             date: null }
   ],
 
   // Anything that is NOT a stage goes here — "no change today", phone calls,
@@ -503,21 +489,19 @@ if (CONFIG.trackingNumber) {
   trackEl.href = "https://tools.usps.com/tracking/?locale=en";
 }
 
-/* ---------- hero: whole days only ----------
-   No hours. USCIS updates case status in an overnight batch, and the portal
-   timestamp reflects when the record was written rather than when the event
-   occurred, so hour-level precision would imply resolution the source data
-   does not have. */
+/* ---------- hero: days and hours, like index.html's clock ---------- */
 const heroRow = document.getElementById("heroRow");
-const heroValue = document.createElement("span");
-const heroUnitEl = document.createElement("span");
-(() => {
+const heroUnits = ["D", "H"].map(unit => {
   const span = document.createElement("span");
   span.className = "hero-num";
-  heroUnitEl.className = "hero-unit";
-  span.append(heroValue, heroUnitEl);
+  const val = document.createElement("span");
+  const u = document.createElement("span");
+  u.className = "hero-unit";
+  u.textContent = unit;
+  span.append(val, u);
   heroRow.appendChild(span);
-})();
+  return val;
+});
 
 /* ---------- render ---------- */
 function render() {
@@ -535,15 +519,15 @@ function render() {
 
   document.documentElement.style.setProperty("--status", delivered ? "var(--green)" : "var(--cyan)");
 
-  /* Hero shows elapsed whole days; the caption carries the inclusive day
+  /* Hero shows elapsed days and hours; the caption carries the inclusive day
      number. Both are true and they differ by one, so the page states each
-     rather than leaving the reader to guess which one a bare number meant.
-     Both are computed from midnight so the hero rolls over at midnight. */
-  const elapsedDays = Math.max(0, Math.round((endDay - start) / DAY_MS));
-  heroValue.textContent = pad(elapsedDays);
-  heroUnitEl.textContent = elapsedDays === 1 ? "DAY" : "DAYS";
+     rather than leaving the reader to guess which one a bare number meant. */
+  const endMoment = delivered ? finalStage.date : now;
+  const elapsedMs = Math.max(0, endMoment - CONFIG.approvalDate);
+  heroUnits[0].textContent = pad(Math.floor(elapsedMs / DAY_MS));
+  heroUnits[1].textContent = pad(Math.floor((elapsedMs % DAY_MS) / 3600000));
   document.getElementById("heroLabel").textContent =
-    delivered ? "DAYS FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
+    delivered ? "ELAPSED FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
   document.getElementById("heroCaption").textContent =
     delivered
       ? "DELIVERED ON DAY " + dayNum + " OF ~" + CONFIG.typicalDays + " TYPICAL"
@@ -565,9 +549,6 @@ function render() {
 
   /* day grid — grows past the typical range instead of clipping or wrapping */
   const totalCells = Math.max(CONFIG.typicalDays, dayNum);
-  const milestoneDays = new Set(
-    stagesDone.map(s => dayNumber(start, s.date)).filter(n => n >= 1)
-  );
   const grid = document.getElementById("dayGrid");
   grid.style.gridTemplateColumns = "repeat(" + totalCells + ", 1fr)";
   grid.innerHTML = "";
@@ -575,16 +556,13 @@ function render() {
     const cell = document.createElement("div");
     cell.className = "day";
     const cellDate = new Date(start.getTime() + (n - 1) * DAY_MS);
-    const hit = milestoneDays.has(n);
-    cell.title = "Day " + n + " · " + fmtDate(cellDate) + (hit ? " · milestone" : "");
-    // Every elapsed day lights, the same way index.html's segment bar works.
-    // Milestones add a marker on top, so a day reads as both "elapsed" and
-    // "something happened" rather than the two being mutually exclusive.
+    cell.title = "Day " + n + " · " + fmtDate(cellDate);
+    // The whole vocabulary: elapsed days are lit, today pulses, future is dark.
+    // No per-cell milestone markers — the pipeline is where events are read.
     const isPast = n <= dayNum;
     const over = n > CONFIG.typicalDays;
     if (isPast) cell.classList.add(over ? "over" : "lit");
     else if (over) cell.classList.add("over-future");
-    if (hit) cell.classList.add("milestone");
     if (delivered && n === dayNum) cell.classList.add("delivered");
     if (!delivered && n === dayNum) cell.classList.add("today");
     grid.appendChild(cell);
@@ -643,12 +621,13 @@ function render() {
 
 render();
 
-/* Ticks by the day. USCIS writes status in a nightly batch, so anything finer
-   would imply a precision the source data does not have. */
-(function scheduleMidnight() {
+/* Ticks by the hour, not the second — the hero's finest unit is hours, and a
+   seconds display would imply a precision this process does not have. */
+(function scheduleHour() {
   const now = new Date();
-  const next = new Date(now); next.setHours(24, 0, 5, 0);
-  setTimeout(() => { render(); scheduleMidnight(); }, next - now);
+  const next = new Date(now);
+  next.setHours(now.getHours() + 1, 0, 5, 0);
+  setTimeout(() => { render(); scheduleHour(); }, next - now);
 })();
 </script>
 </body>
