@@ -1,13 +1,23 @@
 # OPT Premium Processing Tracker
 
-A countdown to the 30-business-day USCIS premium processing deadline.
+Two pages covering the two halves of the wait for an EAD card.
 
-**Live:** https://suhasadidela.github.io/premium-processing-tracker/
+| Page | Covers | State |
+|---|---|---|
+| [`index.html`](index.html) | I-765 filing → premium processing decision | **Complete**, frozen |
+| [`card.html`](card.html) | Approval → physical card in hand | **In progress** |
+
+**Live:** https://suhasadidela.github.io/premium-processing-tracker/ ·
+[card tracker](https://suhasadidela.github.io/premium-processing-tracker/card.html)
 
 > **Approved Fri Aug 14, 2026 — business day 19 of 30, eleven days inside the
-> guarantee.** The tracker is frozen at that moment: the clock is stopped, the
+> guarantee.** `index.html` is frozen at that moment: the clock is stopped, the
 > status reads APPROVED, and nothing re-renders. Setting `approved` back to
-> `null` in `CONFIG` returns it to a live countdown.
+> `null` in its `CONFIG` returns it to a live countdown.
+
+The two pages look identical and behave oppositely, and that is the point. The
+first half of the wait has a guarantee; the second half does not. See
+[Two halves, two different promises](#two-halves-two-different-promises).
 
 ## The problem
 
@@ -79,6 +89,37 @@ window**, so the holiday logic changes nothing for these dates. It is there
 because the window is a config value: change `filedDate` to a November filing
 and the holiday handling starts doing real work immediately.
 
+## Two halves, two different promises
+
+This is the single most important thing to keep straight when editing either
+page, because getting it wrong would make the site lie.
+
+**`index.html` counts against a guarantee.** Premium processing carries a
+30-business-day commitment from USCIS. A deadline exists, so a countdown is the
+honest shape: time remaining is a real quantity, running out means something,
+and OVERDUE is a real failure state worth showing in red.
+
+**`card.html` counts against nothing.** There is no service commitment on card
+production and delivery. The ~12 days is what people typically report, not a
+promise anyone made. So that page has no countdown, no deadline, and no failure
+state, by construction:
+
+- The hero counts **elapsed**, never remaining. There is nothing to remain
+  against.
+- The caption keeps the tilde — `DAY 5 OF ~12 TYPICAL`. The tilde is doing real
+  work; dropping it silently converts a typical range into a deadline.
+- Passing day 12 is **not** an error. The grid appends amber cells rather than
+  clipping or turning red, the pill reads LONGER THAN TYPICAL, and the caption
+  says `STILL NORMAL` outright. Amber means unusual, not wrong. Red is not in
+  this page's vocabulary at all.
+- The number that would actually indicate a problem is **days since last
+  movement**, not days elapsed — a case can sit at day 20 and be fine, or sit
+  eight days with no stage change and be worth a phone call. That stat goes
+  amber at 7 days; the day count never does.
+
+If you later find yourself adding "days left until the card arrives" to
+`card.html`, stop. That number does not exist.
+
 ## Design decisions
 
 ### The segments are discrete on purpose
@@ -125,7 +166,13 @@ re-check all three at a wide desktop window *and* a phone width:
    against this budget: the links row overflowed a 1280×640 window by 3px until
    its padding was capped by `vh` too.
 
-## Configuration
+Both pages are checked against all three at 1920×1080, 1366×768, 1280×640,
+1024×600 and 375×812 before every push. `card.html` needs its own short-landscape
+values rather than a copy of `index.html`'s — it carries a five-row pipeline and
+a notes log on top of everything the first page has, and reusing the first
+page's numbers made its hero *larger* on a short screen, not smaller.
+
+## Configuration — `index.html`
 
 Everything configurable is in the `CONFIG` object at the top of the `<script>`
 block:
@@ -154,6 +201,57 @@ reference and is not derived from the business-day math.
 interval is never started, and the labels change to past tense. When it is
 `null`, everything counts live again.
 
+## Configuration — `card.html`
+
+```js
+const CONFIG = {
+  approvalDate: new Date(2026, 7, 14),   // Aug 14, 2026 — months are 0-indexed
+  typicalDays: 12,                       // TYPICAL, not promised
+
+  stages: [
+    { name: "Case Approved",              date: new Date(2026, 7, 14) },
+    { name: "New Card Is Being Produced", date: null },
+    { name: "Card Was Mailed To Me",      date: null },
+    { name: "Card Was Picked Up By USPS", date: null },
+    { name: "Card Was Delivered To Me",   date: null }
+  ],
+
+  notes: [
+    { date: new Date(2026, 7, 16), text: "Portal updated." }
+  ],
+
+  trackingNumber: "",   // when set, the USPS row appears; empty hides it
+  uscisUrl: "https://egov.uscis.gov/"
+};
+```
+
+**Updating it is one line.** "Card produced today" means putting today's date on
+`stages[1]`; everything else — the pipeline dot, the milestone cell in the grid,
+the stage count, days-since-last-movement — derives from that. Nothing is
+entered twice.
+
+`stages` are the five official USCIS case states and nothing else. Anything you
+observe that is not a state change — "no movement today", a phone call, a portal
+quirk — belongs in `notes`. That separation is why the notes render below the
+pipeline and dimmer than it: an observation must never be able to pass for a
+USCIS stage. Both feed days-since-last-movement, because for that number what
+matters is whether *anything* happened.
+
+`trackingNumber` renders a live USPS link when set. When empty the row is
+removed entirely rather than left as an empty placeholder.
+
+Day counting is inclusive, matching `index.html`: the approval day itself is
+day 1, so Aug 18 is day 5 of the card wait.
+
+When the final stage gets a date the page switches to a result rather than a
+wait — the accent turns green, the hero relabels to DAYS FROM APPROVAL TO
+DELIVERY and holds at the delivery day instead of following the wall clock, and
+days-since-last-movement becomes `—` because nothing is pending.
+
+`card.html` re-renders once just after midnight, not every second. Days are the
+unit; a ticking seconds display would imply a precision the underlying process
+does not have.
+
 ## Interaction
 
 - Status: **ON TRACK** (cyan) → **DUE SOON** (amber, last 3 business days) →
@@ -164,11 +262,14 @@ interval is never started, and the labels change to past tense. When it is
   after first use. Once approved the toggle is removed rather than left inert —
   there is only one duration left to show, so the hero stops being a control
   and drops its `role`, `tabindex`, and pointer cursor.
+- On `card.html`: **IN PROGRESS** (cyan) → **LONGER THAN TYPICAL** (amber, past
+  day ~12) → **CARD DELIVERED** (green). There is deliberately no red state.
+- The two pages link to each other. They are one story told in two halves.
 
 ## Deploying
 
-Pages serves `index.html` from `main`, `/ (root)`. There's no build step, so
-pushing is the deploy:
+Pages serves the repo root from `main`, so both `index.html` and `card.html`
+deploy together. There's no build step, so pushing is the deploy:
 
 ```bash
 git add index.html && git commit -m "..." && git push

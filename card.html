@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>EAD Card Delivery Tracker</title>
+<meta name="description" content="Elapsed time from I-765 approval to physical card delivery, against a typical range." />
+<meta name="theme-color" content="#0A0E14" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0A0E14;
+    --surface: #10151D;
+    --surface-hi: #161C26;
+    --border: #232B38;
+    --text: #E7ECF3;
+    --dim: #6E7A8A;
+    --cyan: #4CC9F0;
+    --amber: #F5A623;
+    --red: #FF5C5C;
+    --green: #4ADE80;
+    --seg-off: #1B222D;
+    --status: var(--cyan);
+  }
+  * { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+  .frame {
+    padding: clamp(12px, min(3vw, 2.2vh), 36px);
+    position: relative;
+    z-index: 2;
+    width: 100%;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: clamp(16px, min(3vw, 2.6vh), 38px) clamp(18px, 3.5vw, 48px) clamp(18px, min(3.5vw, 2.8vh), 42px);
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    /* Hero sizes off the card, not the viewport — the card stops growing at 900px */
+    container-type: inline-size;
+  }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .eyebrow {
+    color: var(--dim);
+    font-size: clamp(11px, 1.1vw, 15px);
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .cursor { color: var(--cyan); animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+  .header-right { text-align: right; }
+  .today-line {
+    color: var(--text);
+    font-size: clamp(12px, 1.2vw, 17px);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    line-height: 1;
+    margin-top: 15px;
+  }
+  .uscis-link {
+    display: inline-block;
+    color: var(--cyan);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: clamp(10px, 0.95vw, 13px);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    transition: border-color 160ms ease, background 160ms ease;
+  }
+  .uscis-link:hover, .uscis-link:focus-visible {
+    border-color: var(--cyan);
+    background: rgba(76,201,240,0.08);
+  }
+  .track-line {
+    color: var(--dim);
+    font-size: clamp(10px, 0.9vw, 12px);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    margin-top: 7px;
+    text-align: right;
+  }
+  .track-line a { color: var(--cyan); text-decoration: none; font-weight: 600; }
+  .track-line a:hover { text-decoration: underline; }
+
+  .hero { text-align: center; margin-top: clamp(12px, 2vh, 30px); user-select: none; }
+  .hero-row {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: clamp(8px, 2.6cqw, 26px);
+    flex-wrap: nowrap;
+  }
+  .hero-num {
+    color: var(--status);
+    /* One number, not four groups — it needs less room than index.html's clock,
+       and this page carries a pipeline underneath that also needs the space. */
+    font-size: clamp(30px, min(12cqw, 11vh), 92px);
+    white-space: nowrap;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    transition: color 300ms ease;
+  }
+  .hero-unit { font-size: 0.3em; color: var(--dim); margin-left: 6px; font-weight: 600; letter-spacing: 0.1em; }
+  .hero-label {
+    color: var(--dim);
+    font-size: clamp(11px, 1.15vw, 16px);
+    letter-spacing: 0.15em;
+    margin-top: clamp(7px, 1.2vh, 15px);
+  }
+  /* The tilde is load-bearing: ~12 is a typical range, never a deadline. */
+  .hero-caption {
+    color: var(--text);
+    font-size: clamp(10px, 1vw, 14px);
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    margin-top: clamp(4px, 0.7vh, 9px);
+  }
+  .status-wrap { text-align: center; margin: clamp(10px, 1.7vh, 22px) 0 clamp(11px, 1.7vh, 24px); }
+  .status-pill {
+    display: inline-block;
+    border: 1px solid var(--status);
+    color: var(--status);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--status) 33%, transparent);
+    border-radius: 999px;
+    padding: clamp(5px, 0.7vw, 9px) clamp(14px, 1.6vw, 24px);
+    font-size: clamp(11px, 1.15vw, 16px);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+
+  /* ---- day grid: same LED language as index.html, but the track can grow ---- */
+  .day-grid {
+    display: grid;
+    gap: clamp(2px, 0.3vw, 5px);
+    width: 100%;
+  }
+  .day {
+    width: 100%;
+    height: clamp(15px, min(3.1vw, 4.3vh), 40px);
+    border-radius: 4px;
+    background: var(--seg-off);
+  }
+  /* A day that passed with no USCIS movement still counts — dim fill, not empty */
+  .day.past { background: #2A3442; }
+  .day.milestone {
+    background: var(--cyan);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 53%, transparent);
+  }
+  /* Past the typical range is longer-than-usual, not late. Amber, never red. */
+  .day.over { background: var(--amber); opacity: 0.55; }
+  .day.over.milestone { background: var(--amber); opacity: 1; }
+  .day.today { animation: pulse 1.4s ease-in-out infinite; }
+  .day.delivered { background: var(--green); box-shadow: 0 0 6px color-mix(in srgb, var(--green) 53%, transparent); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .grid-caption {
+    text-align: center;
+    color: var(--dim);
+    font-size: clamp(9.5px, 1vw, 14px);
+    letter-spacing: 0.08em;
+    margin-top: clamp(5px, 0.9vh, 11px);
+  }
+
+  /* ---- stage pipeline ---- */
+  .pipeline { margin: clamp(11px, 1.7vh, 22px) 0 0; }
+  .stage {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(8px, 1.2vw, 16px);
+    padding: clamp(3px, 0.6vh, 8px) 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stage:last-child { border-bottom: 0; }
+  .stage-dot {
+    width: clamp(8px, 0.9vw, 11px);
+    height: clamp(8px, 0.9vw, 11px);
+    border-radius: 50%;
+    background: var(--seg-off);
+    border: 1px solid var(--border);
+    flex: none;
+  }
+  .stage-name {
+    color: var(--dim);
+    font-size: clamp(10px, 1.05vw, 15px);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .stage-date {
+    color: var(--border);
+    font-size: clamp(9px, 0.95vw, 13px);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .stage.done .stage-dot { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 8px color-mix(in srgb, var(--cyan) 55%, transparent); }
+  .stage.done .stage-name { color: var(--text); }
+  .stage.done .stage-date { color: var(--cyan); }
+  .stage.next .stage-dot { background: var(--cyan); border-color: var(--cyan); animation: pulse 1.4s ease-in-out infinite; }
+  .stage.next .stage-name { color: var(--dim); }
+  .stage.final.done .stage-dot { background: var(--green); border-color: var(--green); box-shadow: 0 0 8px color-mix(in srgb, var(--green) 55%, transparent); }
+  .stage.final.done .stage-date { color: var(--green); }
+
+  /* ---- notes: deliberately below the pipeline and quieter than it, so an
+         observation can never be mistaken for an official USCIS stage ---- */
+  .notes { margin-top: clamp(9px, 1.4vh, 18px); }
+  .notes-head {
+    color: var(--border);
+    font-size: clamp(8.5px, 0.85vw, 11px);
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    margin-bottom: clamp(4px, 0.8vh, 8px);
+  }
+  .note {
+    color: var(--dim);
+    font-size: clamp(9px, 0.9vw, 12px);
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+  }
+  .note-date { color: var(--border); font-weight: 700; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(10px, 1.4vw, 20px);
+    margin: clamp(10px, 1.6vh, 22px) 0 0;
+  }
+  .stat-box {
+    background: var(--surface-hi);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: clamp(7px, min(1.3vw, 1.3vh), 16px) clamp(10px, 1.4vw, 18px);
+    text-align: center;
+  }
+  .stat-val {
+    color: var(--text);
+    font-size: clamp(20px, min(2.8vw, 3.5vh), 38px);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-label {
+    color: var(--dim);
+    font-size: clamp(9px, 1vw, 13px);
+    letter-spacing: 0.08em;
+    margin-top: clamp(4px, 0.8vh, 9px);
+  }
+
+  .links-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(8px, 1vw, 14px);
+    max-width: 900px;
+    margin: clamp(8px, 1.4vh, 18px) auto 0;
+  }
+  .ext-link {
+    color: var(--dim);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    /* vertical padding capped by vh so this row can't push the card off a
+       short screen — see invariant 3 in the README */
+    padding: clamp(5px, min(0.8vw, 1.1vh), 10px) clamp(10px, 1.3vw, 18px);
+    font-size: clamp(9px, 0.9vw, 12px);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+  .ext-link:hover, .ext-link:focus-visible {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    background: rgba(76,201,240,0.08);
+  }
+  .lbl-narrow { display: none; }
+
+  @media (max-width: 420px) {
+    .lbl-wide { display: none; }
+    .lbl-narrow { display: inline; }
+    .links-row { gap: 6px; }
+    .ext-link { font-size: 8.5px; padding: 5px 8px; letter-spacing: 0.08em; }
+    .stage-name { letter-spacing: 0.02em; }
+  }
+  /* Short landscape. This page carries a 5-row pipeline plus notes on top of
+     everything index.html has, so the whole rhythm tightens, not just the hero. */
+  @media (max-height: 700px) and (min-width: 900px) {
+    .hero-num { font-size: clamp(28px, min(9cqw, 9vh), 72px); }
+    .hero { margin-top: clamp(8px, 1.2vh, 16px); }
+    .day { height: clamp(13px, min(2.4vw, 3.6vh), 30px); }
+    .status-wrap { margin: clamp(7px, 1.2vh, 14px) 0 clamp(8px, 1.2vh, 16px); }
+    .stage { padding: clamp(2px, 0.45vh, 6px) 0; }
+    .pipeline { margin-top: clamp(8px, 1.2vh, 16px); }
+    .stat-grid { margin-top: clamp(8px, 1.2vh, 16px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="card">
+
+    <div class="header-row">
+      <div>
+        <div class="eyebrow">EAD_CARD // DELIVERY <span class="cursor">█</span></div>
+        <div class="today-line" id="todayLine"></div>
+      </div>
+      <div class="header-right">
+        <a class="uscis-link" id="uscis" href="https://egov.uscis.gov/" target="_blank" rel="noopener noreferrer">CHECK STATUS ↗</a>
+        <div class="track-line" id="trackLine">USPS <a id="trackLink" href="#" target="_blank" rel="noopener noreferrer"></a></div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-row"><span class="hero-num" id="heroNum"></span><span class="hero-unit" id="heroUnit"></span></div>
+      <div class="hero-label" id="heroLabel"></div>
+      <div class="hero-caption" id="heroCaption"></div>
+    </div>
+
+    <div class="status-wrap">
+      <span class="status-pill" id="statusPill"></span>
+    </div>
+
+    <div>
+      <div class="day-grid" id="dayGrid"></div>
+      <div class="grid-caption" id="gridCaption"></div>
+    </div>
+
+    <div class="pipeline" id="pipeline"></div>
+
+    <div class="notes" id="notesWrap">
+      <div class="notes-head">NOTES</div>
+      <div id="notesList"></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-val" id="sinceMove"></div>
+        <div class="stat-label">DAYS SINCE LAST MOVEMENT</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stageCount"></div>
+        <div class="stat-label">STAGES COMPLETE</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="links-row">
+    <a class="ext-link" href="index.html">← <span class="lbl-wide">30-DAY PREMIUM PROCESSING (COMPLETE)</span><span class="lbl-narrow">PREMIUM PROCESSING</span></a>
+    <a class="ext-link" href="https://www.reddit.com/r/f1visa/comments/1r6p9k0/optstem_opt_processing_timelines_megathread/" target="_blank" rel="noopener noreferrer"><span class="lbl-wide">REDDIT // OPT TIMELINES</span><span class="lbl-narrow">REDDIT</span> ↗</a>
+    <a class="ext-link" href="https://opt-tracker.com/" target="_blank" rel="noopener noreferrer">OPT TRACKER ↗</a>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — the only thing to edit
+   ============================================================ */
+const CONFIG = {
+  approvalDate: new Date(2026, 7, 14),   // Aug 14, 2026 — months are 0-indexed
+  typicalDays: 12,                       // TYPICAL, not promised. See note below.
+
+  // The five official USCIS case states, in order. Add a date as each lands.
+  stages: [
+    { name: "Case Approved",              date: new Date(2026, 7, 14) },
+    { name: "New Card Is Being Produced", date: null },
+    { name: "Card Was Mailed To Me",      date: null },
+    { name: "Card Was Picked Up By USPS", date: null },
+    { name: "Card Was Delivered To Me",   date: null }
+  ],
+
+  // Anything that is NOT an official stage goes here — "no change today",
+  // portal quirks, phone calls. Kept separate so an observation can never be
+  // mistaken for a USCIS state change.
+  notes: [
+    { date: new Date(2026, 7, 16), text: "Portal updated." }
+  ],
+
+  trackingNumber: "",   // when set, the USPS row appears; empty hides it entirely
+  uscisUrl: "https://egov.uscis.gov/"
+};
+
+/* There is no guarantee on card delivery. typicalDays is a reference range,
+   so nothing here counts down and nothing is ever "late" — past the typical
+   range the grid turns amber, which means longer than usual, still normal. */
+
+/* ---------- helpers ---------- */
+const DAY_MS = 86400000;
+const pad = n => String(n).padStart(2, "0");
+function midnight(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+// Inclusive, matching index.html: the approval day itself is day 1.
+function dayNumber(from, to) {
+  return Math.floor((midnight(to) - midnight(from)) / DAY_MS) + 1;
+}
+function fmtDate(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+}
+function fmtShort(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+}
+
+/* ---------- static bits ---------- */
+document.getElementById("uscis").href = CONFIG.uscisUrl;
+
+// No empty placeholder: the whole row is removed until a number exists.
+if (CONFIG.trackingNumber) {
+  const a = document.getElementById("trackLink");
+  a.textContent = CONFIG.trackingNumber;
+  a.href = "https://tools.usps.com/go/TrackConfirmAction?tLabels=" +
+           encodeURIComponent(CONFIG.trackingNumber);
+} else {
+  document.getElementById("trackLine").style.display = "none";
+}
+
+/* ---------- render ---------- */
+function render() {
+  const now = new Date();
+  const today = midnight(now);
+  const start = midnight(CONFIG.approvalDate);
+
+  const stagesDone = CONFIG.stages.filter(s => s.date);
+  const finalStage = CONFIG.stages[CONFIG.stages.length - 1];
+  const delivered = !!finalStage.date;
+
+  // Once delivered the page stops tracking an open wait and reports a result.
+  const endDay = delivered ? midnight(finalStage.date) : today;
+  const dayNum = Math.max(1, dayNumber(start, endDay));
+
+  document.documentElement.style.setProperty("--status", delivered ? "var(--green)" : "var(--cyan)");
+
+  /* hero */
+  document.getElementById("heroNum").textContent = pad(dayNum);
+  document.getElementById("heroUnit").textContent = dayNum === 1 ? "DAY" : "DAYS";
+  document.getElementById("heroLabel").textContent =
+    delivered ? "DAYS FROM APPROVAL TO DELIVERY" : "DAYS ELAPSED SINCE APPROVAL";
+  document.getElementById("heroCaption").textContent =
+    delivered
+      ? "DELIVERED ON DAY " + dayNum + " OF ~" + CONFIG.typicalDays + " TYPICAL"
+      : "DAY " + dayNum + " OF ~" + CONFIG.typicalDays + " TYPICAL";
+
+  /* status pill — never a failure state, only a description of where it sits */
+  const pill = document.getElementById("statusPill");
+  if (delivered) pill.textContent = "● CARD DELIVERED";
+  else if (dayNum > CONFIG.typicalDays) pill.textContent = "● LONGER THAN TYPICAL";
+  else pill.textContent = "● IN PROGRESS";
+  if (!delivered && dayNum > CONFIG.typicalDays) {
+    document.documentElement.style.setProperty("--status", "var(--amber)");
+  }
+
+  /* header date line */
+  const wd = now.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+  const iso = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+  document.getElementById("todayLine").textContent = wd + " · " + iso;
+
+  /* day grid — grows past the typical range instead of clipping or wrapping */
+  const totalCells = Math.max(CONFIG.typicalDays, dayNum);
+  const milestoneDays = new Set(
+    stagesDone.map(s => dayNumber(start, s.date)).filter(n => n >= 1)
+  );
+  const grid = document.getElementById("dayGrid");
+  grid.style.gridTemplateColumns = "repeat(" + totalCells + ", 1fr)";
+  grid.innerHTML = "";
+  for (let n = 1; n <= totalCells; n++) {
+    const cell = document.createElement("div");
+    cell.className = "day";
+    const cellDate = new Date(start.getTime() + (n - 1) * DAY_MS);
+    cell.title = "Day " + n + " · " + fmtDate(cellDate);
+    const isPast = n <= dayNum;
+    const over = n > CONFIG.typicalDays;
+    if (over) cell.classList.add("over");
+    if (isPast) cell.classList.add(over ? "over" : "past");
+    if (milestoneDays.has(n)) cell.classList.add("milestone");
+    if (delivered && n === dayNum) cell.classList.add("delivered");
+    if (!delivered && n === dayNum) cell.classList.add("today");
+    grid.appendChild(cell);
+  }
+  document.getElementById("gridCaption").textContent =
+    dayNum > CONFIG.typicalDays
+      ? "DAY " + dayNum + " · " + (dayNum - CONFIG.typicalDays) + " BEYOND TYPICAL — STILL NORMAL"
+      : "DAY " + dayNum + " OF ~" + CONFIG.typicalDays;
+
+  /* pipeline */
+  const pipe = document.getElementById("pipeline");
+  pipe.innerHTML = "";
+  const nextIdx = CONFIG.stages.findIndex(s => !s.date);
+  CONFIG.stages.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "stage" + (s.date ? " done" : "") + (i === nextIdx ? " next" : "") +
+                    (i === CONFIG.stages.length - 1 ? " final" : "");
+    const dot = document.createElement("div"); dot.className = "stage-dot";
+    const nm = document.createElement("div"); nm.className = "stage-name"; nm.textContent = s.name;
+    const dt = document.createElement("div"); dt.className = "stage-date";
+    dt.textContent = s.date ? fmtDate(s.date) : (i === nextIdx ? "EXPECTED NEXT" : "—");
+    row.append(dot, nm, dt);
+    pipe.appendChild(row);
+  });
+
+  /* notes */
+  const notesWrap = document.getElementById("notesWrap");
+  const list = document.getElementById("notesList");
+  list.innerHTML = "";
+  if (!CONFIG.notes.length) {
+    notesWrap.style.display = "none";
+  } else {
+    notesWrap.style.display = "";
+    CONFIG.notes.slice().sort((a, b) => a.date - b.date).forEach(n => {
+      const el = document.createElement("div");
+      el.className = "note";
+      const d = document.createElement("span");
+      d.className = "note-date";
+      d.textContent = fmtShort(n.date) + " — ";
+      el.appendChild(d);
+      el.appendChild(document.createTextNode(n.text));
+      list.appendChild(el);
+    });
+  }
+
+  /* days since last movement — the number that actually signals a problem */
+  const moments = stagesDone.map(s => midnight(s.date))
+    .concat(CONFIG.notes.map(n => midnight(n.date)));
+  const last = new Date(Math.max.apply(null, moments));
+  const sinceMove = Math.max(0, Math.round((today - last) / DAY_MS));
+  const smEl = document.getElementById("sinceMove");
+  smEl.textContent = delivered ? "—" : sinceMove;
+  smEl.style.color = (!delivered && sinceMove >= 7) ? "var(--amber)" : "var(--text)";
+
+  document.getElementById("stageCount").textContent =
+    stagesDone.length + " / " + CONFIG.stages.length;
+}
+
+render();
+
+/* Ticks by the day, not the second — re-render just after the next midnight. */
+(function scheduleMidnight() {
+  const now = new Date();
+  const next = new Date(now); next.setHours(24, 0, 5, 0);
+  setTimeout(() => { render(); scheduleMidnight(); }, next - now);
+})();
+</script>
+</body>
+</html>
