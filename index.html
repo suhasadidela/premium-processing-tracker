@@ -186,6 +186,12 @@
     letter-spacing: 0.1em;
     font-weight: 700;
   }
+  /* The one place the accent is overridden — the outcome, not the theme. */
+  .status-pill.approved {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--green) 33%, transparent);
+  }
   /* 30 equal columns: one row of 30 by construction, never wraps */
   .seg-bar {
     display: grid;
@@ -569,12 +575,17 @@ function render() {
   const left = Math.max(0, CONFIG.totalBusinessDays - rawPassed);
   const overdue = rawPassed > CONFIG.totalBusinessDays;
 
+  // --status is the page accent: it drives the clock digits and the segment bar
+  // as well as the pill. Approval keeps the cyan accent and colors only the pill
+  // itself, so the blue identity survives the frozen state.
   let statusLabel = "ON TRACK", statusColor = "var(--cyan)";
-  if (APPROVED) { statusLabel = "APPROVED"; statusColor = "var(--green)"; }
+  if (APPROVED) { statusLabel = "APPROVED"; }
   else if (overdue) { statusLabel = "OVERDUE"; statusColor = "var(--red)"; }
   else if (left <= 3) { statusLabel = "DUE SOON"; statusColor = "var(--amber)"; }
   document.documentElement.style.setProperty("--status", statusColor);
-  document.getElementById("statusPill").textContent = "● " + statusLabel;
+  const pill = document.getElementById("statusPill");
+  pill.textContent = "● " + statusLabel;
+  pill.classList.toggle("approved", !!APPROVED);
 
   segs.forEach((el, i) => {
     const n = i + 1;
@@ -591,7 +602,7 @@ function render() {
   if (APPROVED) {
     // "Days left" has nothing to count down to now; days early is the fact.
     leftEl.textContent = left;
-    leftEl.style.color = "var(--green)";
+    leftEl.style.color = "var(--text)";
     document.getElementById("bdLeftLabel").textContent = "BUSINESS DAYS EARLY";
     document.getElementById("bdPassedLabel").textContent = "BUSINESS DAYS TAKEN";
   } else {
