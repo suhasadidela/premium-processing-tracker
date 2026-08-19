@@ -63,7 +63,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: clamp(14px, min(3vw, 2.3vh), 34px) clamp(18px, 3.5vw, 48px) clamp(15px, min(3.5vw, 2.5vh), 36px);
+    padding: clamp(10px, min(3vw, 1.9vh), 30px) clamp(18px, 3.5vw, 48px) clamp(11px, min(3.5vw, 2vh), 32px);
     max-width: 900px;
     width: 100%;
     margin: 0 auto;
@@ -112,19 +112,20 @@
     border-color: var(--cyan);
     background: rgba(76,201,240,0.08);
   }
-  .hero { text-align: center; margin-top: clamp(14px, 2.4vh, 34px); user-select: none; }
+  .hero { text-align: center; margin-top: clamp(11px, 1.8vh, 26px); user-select: none; }
   .hero-row {
     display: flex;
     justify-content: center;
     align-items: baseline;
-    gap: clamp(8px, 2.6cqw, 26px);
+    gap: clamp(10px, 6cqw, 58px);
     flex-wrap: nowrap;
   }
   .hero-num {
     color: var(--status);
-    /* One number, not four groups — it needs less room than index.html's clock,
-       and this page carries a pipeline underneath that also needs the space. */
-    font-size: clamp(30px, min(12cqw, 9.6vh), 92px);
+    /* Two segments, not index.html's four, so the digits are scaled up hard to
+       carry comparable visual weight and anchor the card rather than floating
+       as a small island in the middle of it. */
+    font-size: clamp(34px, min(19cqw, 12.2vh), 150px);
     white-space: nowrap;
     font-weight: 800;
     line-height: 1;
@@ -139,7 +140,7 @@
     letter-spacing: 0.15em;
     /* Clear air under the clock — it was reading as one crowded block with
        its label, caption and the pill. */
-    margin-top: clamp(12px, 2.4vh, 30px);
+    margin-top: clamp(9px, 1.7vh, 22px);
   }
   /* The tilde is load-bearing: ~12 is a typical range, never a deadline. */
   .hero-caption {
@@ -147,10 +148,10 @@
     font-size: clamp(10px, 1vw, 14px);
     letter-spacing: 0.12em;
     font-weight: 700;
-    margin-top: clamp(7px, 1.3vh, 16px);
+    margin-top: clamp(6px, 1vh, 12px);
   }
   /* The pill is its own element, not a tail on the caption */
-  .status-wrap { text-align: center; margin: clamp(16px, 3vh, 38px) 0 clamp(14px, 2.6vh, 32px); }
+  .status-wrap { text-align: center; margin: clamp(12px, 2.1vh, 28px) 0 clamp(11px, 1.9vh, 24px); }
   .status-pill {
     display: inline-block;
     border: 1px solid var(--status);
@@ -172,7 +173,7 @@
   .day {
     position: relative;
     width: 100%;
-    height: clamp(14px, min(3.1vw, 3.9vh), 40px);
+    height: clamp(13px, min(3.1vw, 3.2vh), 38px);
     border-radius: 4px;
     background: var(--seg-off);
   }
@@ -189,13 +190,13 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
 
   /* ---- stage pipeline ---- */
-  .pipeline { margin: clamp(14px, 2.4vh, 30px) 0 0; }
+  .pipeline { margin: clamp(11px, 1.8vh, 24px) 0 0; }
   .stage {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: clamp(8px, 1.2vw, 16px);
-    padding: clamp(2px, 0.45vh, 7px) 0;
+    padding: clamp(2px, 0.3vh, 6px) 0;
     border-bottom: 1px solid var(--border);
   }
   .stage:last-child { border-bottom: 0; }
@@ -261,7 +262,23 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: clamp(10px, 1.4vw, 20px);
-    margin: clamp(14px, 2.4vh, 30px) 0 0;
+    margin: clamp(11px, 1.8vh, 24px) 0 clamp(11px, 1.8vh, 22px);
+  }
+  /* Closing element, same treatment as index.html's date row: full width, thin
+     rule above, dim label over value. */
+  .footer-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-top: 1px solid var(--border);
+    padding-top: clamp(10px, 1.7vh, 20px);
+    gap: 8px;
+  }
+  .footer-label { color: var(--dim); font-size: clamp(10px, min(1vw, 1.6vh), 14px); letter-spacing: 0.08em; }
+  .footer-val {
+    color: var(--text);
+    font-size: clamp(13px, min(1.5vw, 2.3vh), 21px);
+    font-weight: 600;
+    margin-top: clamp(3px, 0.6vh, 8px);
   }
   /* Grid stretches both boxes to the taller one's height. Without centering,
      the box holding the shorter value sits its content against the top with
@@ -270,7 +287,7 @@
     background: var(--surface-hi);
     border: 1px solid var(--border);
     border-radius: 5px;
-    padding: clamp(6px, min(1.1vw, 1.1vh), 14px) clamp(10px, 1.4vw, 18px);
+    padding: clamp(9px, min(1.8vw, 1.55vh), 20px) clamp(10px, 1.4vw, 18px);
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -278,15 +295,9 @@
   }
   .stat-val {
     color: var(--text);
-    font-size: clamp(20px, min(2.8vw, 3.5vh), 38px);
+    font-size: clamp(24px, min(3.4vw, 4.6vh), 48px);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-  }
-  /* A date is a long string; at the numeric size it dominates the card. Match
-     index.html's footer dates so it reads as a date, not a headline figure. */
-  .stat-val.is-date {
-    font-size: clamp(13px, min(1.55vw, 2vh), 21px);
-    font-weight: 600;
   }
   .stat-label {
     color: var(--dim);
@@ -328,6 +339,18 @@
   /* On a small phone the clamps are already at their floors, so the only room
      left is in the fixed minimums themselves — five pipeline rows plus notes
      otherwise overflow a 320px-tall-ish screen. */
+  /* The notes block is optional and costs real height. Rather than shrink the
+     layout permanently for content that is usually absent, the page tightens
+     only while notes exist — so the roomy proportions stand in the common case
+     and invariant 3 still holds in the populated one. */
+  body.has-notes .hero-num { font-size: clamp(30px, min(19cqw, 10.4vh), 120px); }
+  body.has-notes .hero { margin-top: clamp(9px, 1.3vh, 20px); }
+  body.has-notes .status-wrap { margin: clamp(9px, 1.5vh, 20px) 0 clamp(8px, 1.4vh, 18px); }
+  body.has-notes .pipeline { margin-top: clamp(9px, 1.3vh, 18px); }
+  body.has-notes .stat-grid { margin: clamp(9px, 1.3vh, 18px) 0 clamp(9px, 1.3vh, 16px); }
+  body.has-notes .stat-box { padding: clamp(7px, min(1.8vw, 1.1vh), 15px) clamp(10px, 1.4vw, 18px); }
+  body.has-notes .stat-val { font-size: clamp(22px, min(3.4vw, 3.5vh), 40px); }
+
   @media (max-width: 420px) {
     .lbl-wide { display: none; }
     .lbl-narrow { display: inline; }
@@ -337,41 +360,67 @@
     /* Sized when the card carried six stages plus a notes block. With five
        stages the phone layout has room again, so gaps match the card's own
        padding instead of bunching in the middle. */
-    .hero { margin-top: 13px; }
-    .hero-num { font-size: clamp(24px, min(12cqw, 9.6vh), 92px); }
-    .hero-label { margin-top: 7px; }
-    .status-wrap { margin: 13px 0 13px; }
-    .day { height: clamp(12px, min(3.1vw, 3.9vh), 40px); }
-    .stage { padding: 2px 0; }
-    .pipeline { margin-top: 13px; }
-    .stat-grid { margin-top: 13px; }
-    .stat-box { padding: 5px 8px; }
+    .hero { margin-top: 9px; }
+    .hero-num { font-size: clamp(26px, min(15cqw, 11vh), 92px); }
+    .hero-label { margin-top: 6px; }
+    .status-wrap { margin: 9px 0 9px; }
+    .day { height: clamp(10px, min(3.1vw, 3.9vh), 40px); }
+    .stage { padding: 1px 0; }
+    .pipeline { margin-top: 9px; }
+    .stat-grid { margin: 9px 0 9px; }
+    .stat-box { padding: 4px 8px; }
     .stat-val { font-size: 15px; }
+    /* Three date columns don't fit a phone at full size — the values wrapped
+       to two lines and pushed the card off screen. Same treatment index.html
+       uses at this width. */
+    .footer-row { padding-top: 8px; gap: 4px; }
+    .footer-val { font-size: 9px; margin-top: 2px; }
+    .footer-label { font-size: 8px; letter-spacing: 0.03em; }
     /* Notes have to be very tight here; the block still scrolls rather than
        pushing the card off a small phone. */
     .notes { margin-top: 5px; }
     .notes-head { font-size: 8px; margin-bottom: 2px; }
     .note { font-size: 9px; line-height: 1.35; }
-    #notesList { max-height: 20px; }
+    #notesList { max-height: 16px; }
+    /* has-notes outranks this block on specificity, so its phone values are
+       restated here — otherwise it would enlarge things on a small screen. */
+    body.has-notes .hero-num { font-size: clamp(22px, min(13cqw, 11vh), 92px); }
+    body.has-notes .hero { margin-top: 7px; }
+    body.has-notes .status-wrap { margin: 7px 0 7px; }
+    body.has-notes .pipeline { margin-top: 7px; }
+    body.has-notes .stat-grid { margin: 7px 0 7px; }
+    body.has-notes .stat-box { padding: 3px 8px; }
+    body.has-notes .stat-val { font-size: 13px; }
   }
   /* Short landscape. This page carries a 5-row pipeline plus notes on top of
      everything index.html has, so the whole rhythm tightens, not just the hero. */
   @media (max-height: 700px) and (min-width: 900px) {
-    .hero-num { font-size: clamp(28px, min(9cqw, 8vh), 72px); }
+    .hero-num { font-size: clamp(28px, min(13cqw, 8.6vh), 96px); }
     /* Keep the rhythm even here too: with the card's own padding at ~16px,
        6px gaps between blocks made the middle bunch while the edges idled. */
     .card { padding-top: clamp(12px, 2vh, 26px); padding-bottom: clamp(12px, 2vh, 28px); }
-    .hero { margin-top: clamp(10px, 1.8vh, 22px); }
-    .day { height: clamp(12px, min(2.4vw, 3.2vh), 30px); }
-    .status-wrap { margin: clamp(9px, 1.6vh, 20px) 0 clamp(9px, 1.6vh, 20px); }
+    .hero { margin-top: clamp(8px, 1.5vh, 18px); }
+    .day { height: clamp(12px, min(2.4vw, 2.9vh), 30px); }
+    .status-wrap { margin: clamp(8px, 1.35vh, 17px) 0 clamp(8px, 1.35vh, 17px); }
     .stage { padding: clamp(2px, 0.4vh, 6px) 0; }
-    .pipeline { margin-top: clamp(10px, 1.8vh, 22px); }
-    .stat-grid { margin-top: clamp(10px, 1.8vh, 22px); }
+    .pipeline { margin-top: clamp(8px, 1.5vh, 18px); }
+    .stat-grid { margin: clamp(8px, 1.5vh, 18px) 0 clamp(8px, 1.5vh, 16px); }
     .stat-box { padding: clamp(5px, 0.9vh, 12px) clamp(10px, 1.4vw, 18px); }
     .stat-val { font-size: clamp(18px, min(2.6vw, 3vh), 32px); }
-    .notes { margin-top: clamp(5px, 0.8vh, 11px); }
-    .notes-head { margin-bottom: 3px; }
-    #notesList { max-height: clamp(17px, 3vh, 26px); }
+    .notes { margin-top: clamp(3px, 0.45vh, 8px); }
+    .notes-head { margin-bottom: 2px; font-size: 8px; }
+    #notesList { max-height: clamp(12px, 1.6vh, 18px); }
+    .stat-box { padding: clamp(6px, 1.2vh, 14px) clamp(10px, 1.4vw, 18px); }
+    .footer-row { padding-top: clamp(8px, 1.3vh, 16px); }
+    .footer-val { font-size: clamp(12px, 1.9vh, 16px); }
+    .footer-label { font-size: clamp(9px, 1.4vh, 12px); }
+    body.has-notes .hero-num { font-size: clamp(24px, min(13cqw, 7.6vh), 96px); }
+    body.has-notes .stat-val { font-size: clamp(16px, min(2.6vw, 2.7vh), 30px); }
+    body.has-notes .stat-box { padding: clamp(5px, 1vh, 12px) clamp(10px, 1.4vw, 18px); }
+    body.has-notes .stat-grid { margin: clamp(7px, 1.2vh, 15px) 0 clamp(7px, 1.2vh, 14px); }
+    body.has-notes .status-wrap { margin: clamp(7px, 1.2vh, 15px) 0 clamp(7px, 1.2vh, 15px); }
+    body.has-notes .pipeline { margin-top: clamp(7px, 1.2vh, 15px); }
+    body.has-notes .hero { margin-top: clamp(7px, 1.2vh, 15px); }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before { animation: none !important; transition: none !important; }
@@ -409,12 +458,27 @@
 
     <div class="stat-grid">
       <div class="stat-box">
-        <div class="stat-val is-date" id="expectedVal"></div>
-        <div class="stat-label" id="expectedLabel">EXPECTED AROUND</div>
+        <div class="stat-val" id="sinceMove"></div>
+        <div class="stat-label" id="sinceMoveLabel">DAYS SINCE LAST STAGE</div>
       </div>
       <div class="stat-box">
         <div class="stat-val" id="stageCount"></div>
         <div class="stat-label">STAGES COMPLETE</div>
+      </div>
+    </div>
+
+    <div class="footer-row">
+      <div style="text-align:left">
+        <div class="footer-label">APPROVED</div>
+        <div class="footer-val" id="fApproved"></div>
+      </div>
+      <div style="text-align:center">
+        <div class="footer-label">IN PORTAL</div>
+        <div class="footer-val" id="fPortal"></div>
+      </div>
+      <div style="text-align:right">
+        <div class="footer-label">TYPICAL</div>
+        <div class="footer-val" id="fTypical"></div>
       </div>
     </div>
 
@@ -580,16 +644,18 @@ function render() {
     if (!delivered && n === dayNum) cell.classList.add("today");
     grid.appendChild(cell);
   }
-  /* Derived, never hardcoded. "AROUND" is load-bearing: ~12 days is a community
-     average, not a USCIS commitment, so passing this date is not a failure. Past
-     it the card goes amber at most and says so in words — never red. */
+  /* Footer closes the card with the three fixed dates of the wait. The typical
+     date is derived, never hardcoded, and carries a tilde: ~12 days is a
+     community average, not a USCIS commitment, so passing it is not a failure.
+     Past it the value goes amber at most — never red. */
   const typicalEnd = new Date(start.getTime() + (CONFIG.typicalDays - 1) * DAY_MS);
   const pastTypical = !delivered && dayNum > CONFIG.typicalDays;
-  const expVal = document.getElementById("expectedVal");
-  expVal.textContent = fmtDate(typicalEnd);
-  expVal.style.color = pastTypical ? "var(--amber)" : "var(--text)";
-  document.getElementById("expectedLabel").textContent =
-    pastTypical ? "LONGER THAN TYPICAL" : "EXPECTED AROUND";
+  document.getElementById("fApproved").textContent = fmtDate(CONFIG.approvalDate);
+  const portal = CONFIG.stages[1] && CONFIG.stages[1].date;
+  document.getElementById("fPortal").textContent = portal ? fmtDate(portal) : "—";
+  const fTyp = document.getElementById("fTypical");
+  fTyp.textContent = "~" + fmtDate(typicalEnd);
+  fTyp.style.color = pastTypical ? "var(--amber)" : "var(--text)";
 
   /* pipeline */
   const pipe = document.getElementById("pipeline");
@@ -612,6 +678,7 @@ function render() {
   const notesWrap = document.getElementById("notesWrap");
   const list = document.getElementById("notesList");
   list.innerHTML = "";
+  document.body.classList.toggle("has-notes", CONFIG.notes.length > 0);
   if (!CONFIG.notes.length) {
     notesWrap.style.display = "none";
   } else {
@@ -627,6 +694,19 @@ function render() {
       list.appendChild(el);
     });
   }
+
+  /* The number that signals whether anything is actually stuck. Days elapsed
+     can be large and fine; a long gap with no stage change is the thing worth
+     acting on, so this one goes amber at a week. */
+  const moments = stagesDone.map(s => midnight(s.date))
+    .concat(CONFIG.notes.map(n => midnight(n.date)));
+  const lastMove = new Date(Math.max.apply(null, moments));
+  const sinceMove = Math.max(0, Math.round((today - lastMove) / DAY_MS));
+  const smEl = document.getElementById("sinceMove");
+  smEl.textContent = delivered ? "—" : sinceMove;
+  smEl.style.color = (!delivered && sinceMove >= 7) ? "var(--amber)" : "var(--text)";
+  document.getElementById("sinceMoveLabel").textContent =
+    delivered ? "COMPLETE" : "DAYS SINCE LAST STAGE";
 
   document.getElementById("stageCount").textContent =
     stagesDone.length + " / " + CONFIG.stages.length;

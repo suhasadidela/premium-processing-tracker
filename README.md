@@ -115,8 +115,9 @@ state, by construction:
   bar does. Elapsed is lit, today pulses, future is dark — that is the whole
   vocabulary, with no per-cell milestone markers. Past day 12 it appends amber
   cells rather than clipping.
-- The expected-date card says **AROUND**, and past that date goes amber and
-  relabels to LONGER THAN TYPICAL rather than turning red.
+- The footer's TYPICAL date keeps its tilde and goes amber, never red, once
+  passed. It sits among the other dates rather than as a headline figure,
+  precisely so it does not read as a target.
 
 If you later find yourself adding "days left until the card arrives" to
 `card.html`, stop. That number does not exist.
@@ -175,10 +176,16 @@ reusing the first page's numbers made its hero *larger* on a short screen, not
 smaller.
 
 **Check `card.html` with notes present, not just as it currently stands.** With
-`notes: []` the block is hidden and the page fits easily; adding a single note
-overflowed 1366×768 by 32px, 1280×640 by 27px and 320×568 by 31px before the
-rhythm was tightened and the list capped. An empty optional block passing is not
-evidence the populated one does.
+`notes: []` the block is hidden and the page fits easily; a populated one has
+repeatedly overflowed where the empty one passed. An empty optional block
+passing is not evidence the populated one does.
+
+Because the notes block costs real height that is usually unused, the page
+carries a `has-notes` class on `<body>`: the roomy proportions stand while
+notes are absent, and the layout tightens only when they exist. Those rules
+outrank the media queries on specificity, so each breakpoint restates its own
+`has-notes` values — otherwise the desktop-scale versions would *enlarge*
+elements on a phone.
 
 ## Configuration — `index.html`
 
@@ -256,6 +263,22 @@ personal, which matters when reconciling the list against USCIS, but the
 distinction is not drawn on screen.
 
 `Card Delivered` is shortened from USCIS's "Card Was Delivered To Me".
+
+### Closing footer
+
+The card ends with a full-width three-date row — APPROVED / IN PORTAL / TYPICAL
+— matching `index.html`'s FILED / APPROVED / LAST DAY. It closes the
+composition rather than letting the card stop after the stat boxes.
+
+The typical date lives here rather than in a stat box: as a headline figure it
+read as a target, and it duplicated what the stat cards already said. As a
+footer date beside the two real ones it reads as what it is — a reference
+point. It keeps its tilde and goes amber, never red, once passed.
+
+That freed a stat slot for **DAYS SINCE LAST STAGE**, which is the number that
+actually signals a stalled case. Days elapsed can be large and fine; a long gap
+with no stage change is the thing worth acting on, so that stat goes amber at a
+week while the day count never does.
 
 `Tracking Number Received` is the event USCIS itself calls **"Card Was Mailed To
 Me"** — that is the wording the portal will show. It is tracked here under the
