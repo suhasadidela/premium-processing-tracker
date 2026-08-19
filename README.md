@@ -187,6 +187,15 @@ outrank the media queries on specificity, so each breakpoint restates its own
 `has-notes` values — otherwise the desktop-scale versions would *enlarge*
 elements on a phone.
 
+`card.html` has **two** phone breakpoints, and the reason matters. Sizing the
+phone layout in fixed pixels means tuning it for the smallest screen it must
+survive — a 568px-tall SE — and every taller phone then inherits that cramped
+layout and leaves a third of the screen empty. So `max-width: 420px` carries
+height-aware clamps sized for a modern phone, and a nested
+`(max-width: 420px) and (max-height: 680px)` restores fixed tight values only
+where the height genuinely demands them. At 375×812 the card now fills 67% of
+the screen, against `index.html`'s 63%.
+
 ## Configuration — `index.html`
 
 Everything configurable is in the `CONFIG` object at the top of the `<script>`
