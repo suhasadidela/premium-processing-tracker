@@ -5,7 +5,7 @@ Two pages covering the two halves of the wait for an EAD card.
 | Page | Covers | State |
 |---|---|---|
 | [`index.html`](index.html) | I-765 filing → premium processing decision | **Complete**, frozen |
-| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 3 of 5 stages |
+| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 4 of 5 stages |
 
 **Live:** https://suhasadidela.github.io/premium-processing-tracker/ ·
 [card tracker](https://suhasadidela.github.io/premium-processing-tracker/card.html)
@@ -236,13 +236,13 @@ const CONFIG = {
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
     { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
     { name: "Card Was Produced",          date: new Date(2026, 7, 20) },
-    { name: "Tracking Number Received",   date: null, own: true },
+    { name: "Tracking Number Received",   date: new Date(2026, 7, 20), own: true },
     { name: "Card Delivered",             date: null }
   ],
 
   notes: [],            // empty hides the whole block
 
-  trackingNumber: "",   // empty = generic USPS link; set = deep link to parcel
+  trackingNumber: "9205…",   // empty = generic USPS link; set = deep link to parcel
   uscisUrl: "https://egov.uscis.gov/"
 };
 ```
