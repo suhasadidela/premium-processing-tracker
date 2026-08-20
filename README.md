@@ -5,7 +5,7 @@ Two pages covering the two halves of the wait for an EAD card.
 | Page | Covers | State |
 |---|---|---|
 | [`index.html`](index.html) | I-765 filing → premium processing decision | **Complete**, frozen |
-| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 2 of 5 stages |
+| [`card.html`](card.html) | Approval → physical card in hand | **In progress**, 3 of 5 stages |
 
 **Live:** https://suhasadidela.github.io/premium-processing-tracker/ ·
 [card tracker](https://suhasadidela.github.io/premium-processing-tracker/card.html)
@@ -235,7 +235,7 @@ const CONFIG = {
   stages: [
     { name: "Case Approved",              date: new Date(2026, 7, 14) },
     { name: "Case Approved In Portal",    date: new Date(2026, 7, 16), own: true },
-    { name: "New Card Is Being Produced", date: null },
+    { name: "Card Was Produced",          date: new Date(2026, 7, 20) },
     { name: "Tracking Number Received",   date: null, own: true },
     { name: "Card Delivered",             date: null }
   ],
@@ -261,7 +261,7 @@ makes it harder to reconcile the two, not easier.
 |---|---|
 | Case Approved | USCIS |
 | Case Approved In Portal | personal |
-| New Card Is Being Produced | USCIS |
+| Card Was Produced | USCIS |
 | Tracking Number Received | personal |
 | Card Delivered | USCIS |
 
