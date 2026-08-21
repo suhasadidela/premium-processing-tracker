@@ -386,7 +386,7 @@
     .notes { margin-top: 5px; }
     .notes-head { font-size: 8px; margin-bottom: 2px; }
     .note { font-size: 9px; line-height: 1.35; }
-    #notesList { max-height: 16px; }
+    #notesList { max-height: clamp(16px, 3.6vh, 34px); }
     /* has-notes outranks this block on specificity, so its phone values are
        restated here — otherwise it would enlarge things on a small screen. */
     body.has-notes .hero-num { font-size: clamp(22px, min(15cqw, 6vh), 92px); }
@@ -415,7 +415,7 @@
     .footer-row { padding-top: 8px; }
     .footer-val { font-size: 9px; margin-top: 2px; }
     .footer-label { font-size: 8px; }
-    #notesList { max-height: 14px; }
+    #notesList { max-height: clamp(14px, 4vh, 26px); }
     body.has-notes .hero-num { font-size: clamp(22px, min(13cqw, 6vh), 92px); }
     body.has-notes .hero { margin-top: 6px; }
     body.has-notes .status-wrap { margin: 6px 0 6px; }
@@ -442,7 +442,7 @@
     .stat-val { font-size: clamp(18px, min(2.6vw, 3vh), 32px); }
     .notes { margin-top: clamp(3px, 0.45vh, 8px); }
     .notes-head { margin-bottom: 2px; font-size: 8px; }
-    #notesList { max-height: clamp(12px, 1.6vh, 18px); }
+    #notesList { max-height: clamp(17px, 3.1vh, 26px); }
     .stat-box { padding: clamp(6px, 1.2vh, 14px) clamp(10px, 1.4vw, 18px); }
     .footer-row { padding-top: clamp(8px, 1.3vh, 16px); }
     .footer-val { font-size: clamp(12px, 1.9vh, 16px); }
@@ -558,7 +558,9 @@ const CONFIG = {
   // Anything that is NOT a stage goes here — "no change today", phone calls,
   // portal quirks. Kept separate so an observation can never be mistaken for a
   // USCIS state change. Empty is fine; the whole block hides.
-  notes: [],
+  notes: [
+    { date: new Date(2026, 7, 21), text: "In transit. USPS expects delivery Sat Aug 22 by 9pm." }
+  ],
 
   trackingNumber: "9205590153708662178619",   // empty = generic USPS link
   uscisUrl: "https://egov.uscis.gov/"
